@@ -1,0 +1,81 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  createdAt?: string;
+}
+
+export interface Board {
+  id: string;
+  title: string;
+  description?: string;
+  color: string;
+  ownerId: string;
+  owner: User;
+  members: BoardMember[];
+  lists?: List[];
+  _count?: { tasks: number; lists: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BoardMember {
+  id: string;
+  boardId: string;
+  userId: string;
+  role: 'OWNER' | 'MEMBER';
+  user: User;
+  joinedAt: string;
+}
+
+export interface List {
+  id: string;
+  title: string;
+  boardId: string;
+  position: number;
+  tasks: Task[];
+  createdAt: string;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  listId: string;
+  boardId: string;
+  position: number;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  dueDate?: string;
+  assignees: TaskAssignee[];
+  list?: { id: string; title: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskAssignee {
+  id: string;
+  taskId: string;
+  userId: string;
+  user: User;
+  assignedAt: string;
+}
+
+export interface Activity {
+  id: string;
+  boardId: string;
+  userId: string;
+  taskId?: string;
+  action: string;
+  details?: string;
+  user: User;
+  task?: { id: string; title: string };
+  createdAt: string;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
