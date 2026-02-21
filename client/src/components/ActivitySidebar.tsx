@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useBoardStore } from '../store/boardStore';
-import { X, ArrowRight, Plus, Trash2, UserPlus, Edit3, MoveRight, UserMinus } from 'lucide-react';
+import { ArrowRight, Plus, Trash2, UserPlus, Edit3, MoveRight, UserMinus } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from './ui/sheet';
+import { Button } from './ui/button';
 
 const ACTION_ICONS: Record<string, any> = {
   BOARD_CREATED: Plus,
@@ -61,48 +63,58 @@ export default function ActivitySidebar({ boardId, onClose }: ActivitySidebarPro
   };
 
   return (
-    <div className="activity-sidebar">
-      <div className="panel-header">
-        <h3>Activity</h3>
-        <button className="icon-btn" onClick={onClose}><X size={16} /></button>
-      </div>
-      <div className="activity-list">
-        {activities.map((activity) => {
-          const Icon = ACTION_ICONS[activity.action] || Edit3;
-          const details = getDetails(activity.details);
-          return (
-            <div key={activity.id} className="activity-item">
-              <div className="activity-icon">
-                <Icon size={14} />
+    <Sheet open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <SheetContent side="right" className="w-[400px] sm:w-[540px] border-l-border/50 bg-card p-0 flex flex-col">
+        <SheetHeader className="p-6 border-b border-border/50 flex-none">
+          <SheetTitle className="text-xl">Activity</SheetTitle>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 relative">
+          {activities.map((activity) => {
+            const Icon = ACTION_ICONS[activity.action] || Edit3;
+            const details = getDetails(activity.details);
+            return (
+              <div key={activity.id} className="flex gap-4">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 relative z-10">
+                  <Icon size={14} />
+                </div>
+                <div className="flex-1 pb-4 border-b border-border/30 last:border-0 last:pb-0">
+                  <p className="text-sm text-foreground/90 leading-relaxed">
+                    <strong className="text-foreground">{activity.user.name}</strong>{' '}
+                    <span className="text-muted-foreground">{ACTION_LABELS[activity.action] || activity.action}</span>
+                    {details.title && <span className="text-foreground"> "<em>{details.title}</em>"</span>}
+                    {details.fromList && details.toList && (
+                      <span className="inline-flex items-center gap-1 text-muted-foreground ml-1">
+                        from <span className="text-foreground font-medium">{details.fromList}</span> 
+                        <ArrowRight size={12} /> 
+                        <span className="text-foreground font-medium">{details.toList}</span>
+                      </span>
+                    )}
+                    {details.memberName && <strong className="text-foreground ml-1">{details.memberName}</strong>}
+                    {details.assigneeName && <strong className="text-foreground ml-1">{details.assigneeName}</strong>}
+                  </p>
+                  <span className="text-xs text-muted-foreground mt-1 block">{formatTime(activity.createdAt)}</span>
+                </div>
               </div>
-              <div className="activity-content">
-                <p>
-                  <strong>{activity.user.name}</strong>{' '}
-                  {ACTION_LABELS[activity.action] || activity.action}
-                  {details.title && <> "<em>{details.title}</em>"</>}
-                  {details.fromList && details.toList && (
-                    <> from {details.fromList} <ArrowRight size={12} className="inline-icon" /> {details.toList}</>
-                  )}
-                  {details.memberName && <> <strong>{details.memberName}</strong></>}
-                  {details.assigneeName && <> <strong>{details.assigneeName}</strong></>}
-                </p>
-                <span className="activity-time">{formatTime(activity.createdAt)}</span>
-              </div>
+            );
+          })}
+          
+          {activities.length === 0 && (
+            <div className="text-center text-muted-foreground py-10">No activity yet</div>
+          )}
+          
+          {activityPagination && activityPagination.page < activityPagination.totalPages && (
+            <div className="pt-4 pb-8 flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchActivity(boardId, activityPagination.page + 1)}
+              >
+                Load more
+              </Button>
             </div>
-          );
-        })}
-        {activities.length === 0 && (
-          <p className="empty-text">No activity yet</p>
-        )}
-        {activityPagination && activityPagination.page < activityPagination.totalPages && (
-          <button
-            className="btn btn-ghost btn-sm load-more-btn"
-            onClick={() => fetchActivity(boardId, activityPagination.page + 1)}
-          >
-            Load more
-          </button>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -1,4 +1,5 @@
-import { X, Keyboard } from 'lucide-react';
+import { Keyboard } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 interface ShortcutsHelpProps {
   onClose: () => void;
@@ -13,21 +14,25 @@ const shortcuts = [
 
 export default function ShortcutsHelp({ onClose }: ShortcutsHelpProps) {
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal shortcuts-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2><Keyboard size={20} /> Keyboard Shortcuts</h2>
-          <button className="icon-btn" onClick={onClose}><X size={20} /></button>
-        </div>
-        <div className="shortcuts-list">
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <div className="flex items-center gap-2 text-primary">
+            <Keyboard className="w-5 h-5" />
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          </div>
+        </DialogHeader>
+        <div className="flex flex-col gap-3 py-4">
           {shortcuts.map((s) => (
-            <div key={s.key} className="shortcut-row">
-              <kbd className="shortcut-key">{s.key}</kbd>
-              <span>{s.description}</span>
+            <div key={s.key} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
+              <span className="text-sm text-muted-foreground">{s.description}</span>
+              <kbd className="px-2 py-1 bg-muted border border-border rounded-md text-xs font-mono font-bold text-foreground min-w-[32px] text-center shadow-sm">
+                {s.key}
+              </kbd>
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

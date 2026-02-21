@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Task, BoardMember, Comment, Label, TaskLabel } from '../types';
 import { useBoardStore } from '../store/boardStore';
-import { useToastStore } from '../store/toastStore';
+import { toast } from 'sonner';
 import { tasksAPI, commentsAPI, labelsAPI } from '../services/api';
 import { getSocket } from '../services/socket';
 import ConfirmModal from './ConfirmModal';
@@ -28,7 +28,7 @@ interface TaskModalProps {
 
 export default function TaskModal({ task, boardMembers, onClose }: TaskModalProps) {
   const { updateTask, deleteTask } = useBoardStore();
-  const addToast = useToastStore((s) => s.addToast);
+  // const addToast = useToastStore((s) => s.addToast);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || '');
   const [priority, setPriority] = useState(task.priority);
@@ -105,13 +105,13 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
       dueDate: dueDate || null,
     });
     setSaving(false);
-    addToast('Task updated successfully!');
+    toast.success('Task updated successfully!');
     onClose();
   };
 
   const handleDelete = async () => {
     await deleteTask(task.id, task.listId);
-    addToast('Task deleted successfully!');
+    toast.success('Task deleted successfully!');
     onClose();
   };
 
@@ -119,9 +119,9 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
     try {
       const { data } = await tasksAPI.assign(task.id, userId);
       setAssignees([...assignees, data.assignee]);
-      addToast('Member assigned to task!');
+      toast.success('Member assigned to task!');
     } catch (err: any) {
-      addToast(err.response?.data?.error || 'Failed to assign', 'error');
+      toast.error(err.response?.data?.error || 'Failed to assign');
     }
   };
 
@@ -129,9 +129,9 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
     try {
       await tasksAPI.unassign(task.id, userId);
       setAssignees(assignees.filter((a) => a.userId !== userId));
-      addToast('Member unassigned from task!');
+      toast.success('Member unassigned from task!');
     } catch (err: any) {
-      addToast(err.response?.data?.error || 'Failed to unassign', 'error');
+      toast.error(err.response?.data?.error || 'Failed to unassign');
     }
   };
 
@@ -143,7 +143,7 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
       setNewComment('');
       // Real-time event will add it to the list
     } catch {
-      addToast('Failed to add comment', 'error');
+      toast.error('Failed to add comment');
     }
   };
 
@@ -152,7 +152,7 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
       await commentsAPI.delete(commentId);
       // Real-time event will remove it
     } catch {
-      addToast('Failed to delete comment', 'error');
+      toast.error('Failed to delete comment');
     }
   };
 
@@ -160,9 +160,9 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
     try {
       const { data } = await labelsAPI.addToTask(task.id, labelId);
       setTaskLabels([...taskLabels, data.taskLabel]);
-      addToast('Label added!');
+      toast.success('Label added!');
     } catch (err: any) {
-      addToast(err.response?.data?.error || 'Failed to add label', 'error');
+      toast.error(err.response?.data?.error || 'Failed to add label');
     }
   };
 
@@ -170,9 +170,9 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
     try {
       await labelsAPI.removeFromTask(task.id, labelId);
       setTaskLabels(taskLabels.filter((tl) => tl.labelId !== labelId));
-      addToast('Label removed!');
+      toast.success('Label removed!');
     } catch {
-      addToast('Failed to remove label', 'error');
+      toast.error('Failed to remove label');
     }
   };
 
@@ -185,9 +185,9 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
       });
       setBoardLabels([...boardLabels, data.label]);
       setNewLabelName('');
-      addToast('Label created!');
+      toast.success('Label created!');
     } catch {
-      addToast('Failed to create label', 'error');
+      toast.error('Failed to create label');
     }
   };
 

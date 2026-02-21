@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import ErrorBoundary from './components/ErrorBoundary';
-import ToastContainer from './components/ToastContainer';
+import { Toaster } from './components/ui/sonner';
 import './index.css';
 
 // Lazy-loaded page components
@@ -32,7 +32,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <ToastContainer />
+      <Toaster theme="dark" position="bottom-right" />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
