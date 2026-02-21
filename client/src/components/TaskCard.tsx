@@ -1,5 +1,5 @@
 import { Task } from '../types';
-import { Calendar, AlertTriangle, Flag, User } from 'lucide-react';
+import { Calendar, Flag } from 'lucide-react';
 
 const PRIORITY_COLORS: Record<string, string> = {
   LOW: '#10b981',
@@ -14,12 +14,39 @@ interface TaskCardProps {
   isDragging?: boolean;
 }
 
+function getDueStatus(dueDate?: string): 'overdue' | 'today' | 'normal' | null {
+  if (!dueDate) return null;
+  const now = new Date();
+  const due = new Date(dueDate);
+  now.setHours(0, 0, 0, 0);
+  due.setHours(0, 0, 0, 0);
+  if (due < now) return 'overdue';
+  if (due.getTime() === now.getTime()) return 'today';
+  return 'normal';
+}
+
 export default function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
+  const dueStatus = getDueStatus(task.dueDate);
+
   return (
     <div
       className={`task-card ${isDragging ? 'task-card-dragging' : ''}`}
       onClick={onClick}
     >
+      {/* Label chips */}
+      {task.labels && task.labels.length > 0 && (
+        <div className="task-label-chips">
+          {task.labels.slice(0, 4).map((tl) => (
+            <span
+              key={tl.id}
+              className="task-label-chip"
+              style={{ backgroundColor: tl.label.color }}
+              title={tl.label.name}
+            />
+          ))}
+        </div>
+      )}
+
       <div className="task-card-top">
         <span
           className="priority-badge"
@@ -35,9 +62,9 @@ export default function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
       )}
       <div className="task-card-footer">
         {task.dueDate && (
-          <span className="task-due">
+          <span className={`task-due ${dueStatus === 'overdue' ? 'task-due-overdue' : dueStatus === 'today' ? 'task-due-today' : ''}`}>
             <Calendar size={12} />
-            {new Date(task.dueDate).toLocaleDateString()}
+            {dueStatus === 'overdue' ? 'Overdue' : dueStatus === 'today' ? 'Due today' : new Date(task.dueDate).toLocaleDateString()}
           </span>
         )}
         {task.assignees && task.assignees.length > 0 && (

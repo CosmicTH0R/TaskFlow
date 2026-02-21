@@ -19,6 +19,7 @@ model User {
   memberships  BoardMember[]
   assignedTasks TaskAssignee[]
   activities   Activity[]
+  comments     Comment[]
 }
 
 model Board {
@@ -35,6 +36,7 @@ model Board {
   lists    List[]
   tasks    Task[]
   activity Activity[]
+  labels   Label[]
 
   @@index([ownerId])
 }
@@ -83,6 +85,8 @@ model Task {
   board     Board          @relation(fields: [boardId], references: [id], onDelete: Cascade)
   assignees TaskAssignee[]
   activity  Activity[]
+  comments  Comment[]
+  labels    TaskLabel[]
 
   @@index([listId, position])
   @@index([boardId])
@@ -116,4 +120,44 @@ model Activity {
   task  Task?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([boardId, createdAt])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@index([userId])
+}
+
+model Label {
+  id      String @id @default(uuid())
+  name    String
+  color   String @default("#6366f1")
+  boardId String
+
+  board Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks TaskLabel[]
+
+  @@index([boardId])
+}
+
+model TaskLabel {
+  id      String @id @default(uuid())
+  taskId  String
+  labelId String
+
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, labelId])
+  @@index([taskId])
+  @@index([labelId])
 }

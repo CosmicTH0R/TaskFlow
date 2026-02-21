@@ -61,6 +61,9 @@ export const getBoard = async (req: AuthRequest, res: Response): Promise<void> =
                 assignees: {
                   include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
                 },
+                labels: {
+                  include: { label: true },
+                },
               },
             },
           },

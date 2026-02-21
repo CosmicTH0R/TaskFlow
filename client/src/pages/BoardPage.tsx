@@ -17,9 +17,12 @@ import TaskModal from '../components/TaskModal';
 import ActivitySidebar from '../components/ActivitySidebar';
 import {
   ArrowLeft, Plus, Trash2,
-  Users, Activity as ActivityIcon, UserPlus, X
+  Users, Activity as ActivityIcon, UserPlus, X,
+  Search, Filter, Keyboard
 } from 'lucide-react';
 import { Task } from '../types';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import ShortcutsHelp from '../components/ShortcutsHelp';
 
 export default function BoardPage() {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +50,32 @@ export default function BoardPage() {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memberError, setMemberError] = useState('');
   const [confirmDeleteList, setConfirmDeleteList] = useState<string | null>(null);
+
+  // Filter / sort state
+  const [filterText, setFilterText] = useState('');
+  const [filterPriority, setFilterPriority] = useState('');
+  const [sortBy, setSortBy] = useState<'position' | 'priority' | 'dueDate'>('position');
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onNewTask: () => {
+      if (lists.length > 0) {
+        setAddingTaskListId(lists[0].id);
+        setTimeout(() => document.getElementById('new-task-input')?.focus(), 50);
+      }
+    },
+    onCloseModal: () => {
+      setSelectedTask(null);
+      setShowMembers(false);
+      setShowActivity(false);
+      setShowShortcuts(false);
+    },
+    onFocusSearch: () => {
+      document.getElementById('board-filter-input')?.focus();
+    },
+    onToggleHelp: () => setShowShortcuts((v) => !v),
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -201,8 +230,42 @@ export default function BoardPage() {
           >
             <ActivityIcon size={16} /> Activity
           </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowShortcuts(true)}
+            title="Keyboard shortcuts (?)"
+            id="shortcuts-btn"
+          >
+            <Keyboard size={16} />
+          </button>
         </div>
       </header>
+
+      {/* Filter bar */}
+      <div className="board-filter-bar">
+        <div className="filter-search">
+          <Search size={14} />
+          <input
+            type="text"
+            placeholder="Filter tasks..."
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            id="board-filter-input"
+          />
+        </div>
+        <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} className="filter-select" id="priority-filter">
+          <option value="">All priorities</option>
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+          <option value="URGENT">Urgent</option>
+        </select>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="filter-select" id="sort-select">
+          <option value="position">Default order</option>
+          <option value="priority">Priority</option>
+          <option value="dueDate">Due date</option>
+        </select>
+      </div>
 
       {showMembers && (
         <div className="members-panel">
@@ -281,7 +344,27 @@ export default function BoardPage() {
 
                 <SortableContext items={list.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                   <div className="tasks-container" id={list.id}>
-                    {list.tasks.map((task) => (
+                    {list.tasks
+                      .filter(task => {
+                        if (filterText && !task.title.toLowerCase().includes(filterText.toLowerCase()) &&
+                            !(task.description || '').toLowerCase().includes(filterText.toLowerCase())) return false;
+                        if (filterPriority && task.priority !== filterPriority) return false;
+                        return true;
+                      })
+                      .sort((a, b) => {
+                        if (sortBy === 'priority') {
+                          const order = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+                          return (order[a.priority] ?? 2) - (order[b.priority] ?? 2);
+                        }
+                        if (sortBy === 'dueDate') {
+                          if (!a.dueDate && !b.dueDate) return 0;
+                          if (!a.dueDate) return 1;
+                          if (!b.dueDate) return -1;
+                          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                        }
+                        return a.position - b.position;
+                      })
+                      .map((task) => (
                       <SortableTaskCard
                         key={task.id}
                         task={task}
@@ -298,6 +381,7 @@ export default function BoardPage() {
                       onChange={(e) => setNewTaskTitle(e.target.value)}
                       placeholder="Task title..."
                       autoFocus
+                      id="new-task-input"
                       onBlur={() => { if (!newTaskTitle.trim()) setAddingTaskListId(null); }}
                     />
                     <div className="add-task-actions">
@@ -382,6 +466,8 @@ export default function BoardPage() {
           onCancel={() => setConfirmDeleteList(null)}
         />
       )}
+
+      {showShortcuts && <ShortcutsHelp onClose={() => setShowShortcuts(false)} />}
     </div>
   );
 }

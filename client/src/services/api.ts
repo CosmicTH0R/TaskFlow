@@ -86,4 +86,32 @@ export const activityAPI = {
     api.get(`/activity/boards/${boardId}/activity`, { params: { page, limit: 20 } }),
 };
 
+// Comments
+export const commentsAPI = {
+  list: (taskId: string, page?: number) =>
+    api.get(`/tasks/${taskId}/comments`, { params: { page } }),
+  create: (taskId: string, content: string) =>
+    api.post(`/tasks/${taskId}/comments`, { content }),
+  delete: (id: string) => api.delete(`/comments/${id}`),
+};
+
+// Labels
+export const labelsAPI = {
+  list: (boardId: string) => api.get(`/boards/${boardId}/labels`),
+  create: (boardId: string, data: { name: string; color?: string }) =>
+    api.post(`/boards/${boardId}/labels`, data),
+  delete: (id: string) => api.delete(`/labels/${id}`),
+  addToTask: (taskId: string, labelId: string) =>
+    api.post(`/tasks/${taskId}/labels`, { labelId }),
+  removeFromTask: (taskId: string, labelId: string) =>
+    api.delete(`/tasks/${taskId}/labels/${labelId}`),
+};
+
+// Profile
+export const profileAPI = {
+  update: (data: { name: string }) => api.put('/profile', data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.put('/profile/password', data),
+};
+
 export default api;

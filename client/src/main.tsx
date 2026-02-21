@@ -10,6 +10,7 @@ import './index.css';
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const BoardPage = lazy(() => import('./pages/BoardPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 
 function PageLoader() {
   return <div className="loading-screen"><div className="spinner" /></div>;
@@ -37,6 +38,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/board/:id" element={<ProtectedRoute><BoardPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Suspense>

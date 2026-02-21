@@ -32,6 +32,9 @@ export const listTasks = async (req: AuthRequest, res: Response): Promise<void> 
           assignees: {
             include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
           },
+          labels: {
+            include: { label: true },
+          },
           list: { select: { id: true, title: true } },
         },
         orderBy: { position: 'asc' },
@@ -79,6 +82,9 @@ export const createTask = async (req: AuthRequest, res: Response): Promise<void>
         assignees: {
           include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
         },
+        labels: {
+          include: { label: true },
+        },
         list: { select: { id: true, title: true } },
       },
     });
@@ -125,6 +131,9 @@ export const updateTask = async (req: AuthRequest, res: Response): Promise<void>
       include: {
         assignees: {
           include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+        },
+        labels: {
+          include: { label: true },
         },
         list: { select: { id: true, title: true } },
       },

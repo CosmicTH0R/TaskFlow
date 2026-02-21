@@ -73,3 +73,31 @@ export const moveTaskSchema = z.object({
 export const assignTaskSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
 });
+
+// ─── Comments ────────────────────────────────────────────────────────────────
+
+export const createCommentSchema = z.object({
+  content: z.string().min(1, 'Comment cannot be empty').max(5000, 'Comment is too long'),
+});
+
+// ─── Labels ──────────────────────────────────────────────────────────────────
+
+export const createLabelSchema = z.object({
+  name: z.string().min(1, 'Label name is required').max(50),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color must be a valid hex color').optional(),
+});
+
+export const assignLabelSchema = z.object({
+  labelId: z.string().min(1, 'Label ID is required'),
+});
+
+// ─── Profile ─────────────────────────────────────────────────────────────────
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+});

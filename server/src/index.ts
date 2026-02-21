@@ -12,6 +12,9 @@ import boardRoutes from './routes/boards';
 import listRoutes from './routes/lists';
 import taskRoutes from './routes/tasks';
 import activityRoutes from './routes/activity';
+import commentRoutes from './routes/comments';
+import labelRoutes from './routes/labels';
+import profileRoutes from './routes/profile';
 
 // ── Env guard ────────────────────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -71,6 +74,9 @@ app.use('/api/boards', boardRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api', commentRoutes);
+app.use('/api', labelRoutes);
+app.use('/api/profile', profileRoutes);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

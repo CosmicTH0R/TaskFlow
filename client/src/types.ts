@@ -48,6 +48,7 @@ export interface Task {
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   dueDate?: string;
   assignees: TaskAssignee[];
+  labels?: TaskLabel[];
   list?: { id: string; title: string };
   createdAt: string;
   updatedAt: string;
@@ -59,6 +60,30 @@ export interface TaskAssignee {
   userId: string;
   user: User;
   assignedAt: string;
+}
+
+export interface TaskLabel {
+  id: string;
+  taskId: string;
+  labelId: string;
+  label: Label;
+}
+
+export interface Label {
+  id: string;
+  name: string;
+  color: string;
+  boardId: string;
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  taskId: string;
+  userId: string;
+  user: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Activity {

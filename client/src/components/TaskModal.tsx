@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Task, BoardMember } from '../types';
+import { useState, useEffect, useRef } from 'react';
+import { Task, BoardMember, Comment, Label, TaskLabel } from '../types';
 import { useBoardStore } from '../store/boardStore';
 import { useToastStore } from '../store/toastStore';
-import { tasksAPI } from '../services/api';
+import { tasksAPI, commentsAPI, labelsAPI } from '../services/api';
+import { getSocket } from '../services/socket';
 import ConfirmModal from './ConfirmModal';
 import {
   X, Flag, Calendar, AlignLeft, Users, Trash2, UserPlus,
-  Save, Clock
+  Save, Clock, MessageSquare, Send, Tag, Plus
 } from 'lucide-react';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
@@ -16,6 +17,8 @@ const PRIORITY_COLORS: Record<string, string> = {
   HIGH: '#f97316',
   URGENT: '#ef4444',
 };
+
+const LABEL_COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 interface TaskModalProps {
   task: Task;
@@ -34,6 +37,64 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
   const [saving, setSaving] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Comments
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const commentInputRef = useRef<HTMLInputElement>(null);
+
+  // Labels
+  const [taskLabels, setTaskLabels] = useState<TaskLabel[]>(task.labels || []);
+  const [boardLabels, setBoardLabels] = useState<Label[]>([]);
+  const [showLabelPicker, setShowLabelPicker] = useState(false);
+  const [newLabelName, setNewLabelName] = useState('');
+  const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[0]);
+
+  // Load comments and board labels
+  useEffect(() => {
+    loadComments();
+    loadBoardLabels();
+
+    // Real-time comment events
+    const socket = getSocket();
+    if (socket) {
+      socket.on('comment:created', (comment: Comment) => {
+        if (comment.taskId === task.id) {
+          setComments((prev) => [comment, ...prev]);
+        }
+      });
+      socket.on('comment:deleted', (data: { commentId: string; taskId: string }) => {
+        if (data.taskId === task.id) {
+          setComments((prev) => prev.filter((c) => c.id !== data.commentId));
+        }
+      });
+      return () => {
+        socket.off('comment:created');
+        socket.off('comment:deleted');
+      };
+    }
+  }, [task.id]);
+
+  const loadComments = async () => {
+    setCommentsLoading(true);
+    try {
+      const { data } = await commentsAPI.list(task.id);
+      setComments(data.comments);
+    } catch {
+      /* silent */
+    }
+    setCommentsLoading(false);
+  };
+
+  const loadBoardLabels = async () => {
+    try {
+      const { data } = await labelsAPI.list(task.boardId);
+      setBoardLabels(data.labels);
+    } catch {
+      /* silent */
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -74,8 +135,68 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
     }
   };
 
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    try {
+      await commentsAPI.create(task.id, newComment.trim());
+      setNewComment('');
+      // Real-time event will add it to the list
+    } catch {
+      addToast('Failed to add comment', 'error');
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await commentsAPI.delete(commentId);
+      // Real-time event will remove it
+    } catch {
+      addToast('Failed to delete comment', 'error');
+    }
+  };
+
+  const handleAddLabel = async (labelId: string) => {
+    try {
+      const { data } = await labelsAPI.addToTask(task.id, labelId);
+      setTaskLabels([...taskLabels, data.taskLabel]);
+      addToast('Label added!');
+    } catch (err: any) {
+      addToast(err.response?.data?.error || 'Failed to add label', 'error');
+    }
+  };
+
+  const handleRemoveLabel = async (labelId: string) => {
+    try {
+      await labelsAPI.removeFromTask(task.id, labelId);
+      setTaskLabels(taskLabels.filter((tl) => tl.labelId !== labelId));
+      addToast('Label removed!');
+    } catch {
+      addToast('Failed to remove label', 'error');
+    }
+  };
+
+  const handleCreateLabel = async () => {
+    if (!newLabelName.trim()) return;
+    try {
+      const { data } = await labelsAPI.create(task.boardId, {
+        name: newLabelName.trim(),
+        color: newLabelColor,
+      });
+      setBoardLabels([...boardLabels, data.label]);
+      setNewLabelName('');
+      addToast('Label created!');
+    } catch {
+      addToast('Failed to create label', 'error');
+    }
+  };
+
   const unassignedMembers = boardMembers.filter(
     (m) => !assignees.some((a) => a.userId === m.userId)
+  );
+
+  const unassignedLabels = boardLabels.filter(
+    (l) => !taskLabels.some((tl) => tl.labelId === l.id)
   );
 
   return (
@@ -141,6 +262,66 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
             </div>
           </div>
 
+          {/* Labels */}
+          <div className="form-group">
+            <label><Tag size={14} /> Labels</label>
+            <div className="labels-list">
+              {taskLabels.map((tl) => (
+                <span
+                  key={tl.id}
+                  className="label-chip"
+                  style={{ backgroundColor: tl.label.color + '25', color: tl.label.color, borderColor: tl.label.color + '40' }}
+                >
+                  {tl.label.name}
+                  <button className="chip-remove" onClick={() => handleRemoveLabel(tl.labelId)}>
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+              <button className="assignee-add" onClick={() => setShowLabelPicker(!showLabelPicker)}>
+                <Tag size={14} /> Add Label
+              </button>
+            </div>
+            {showLabelPicker && (
+              <div className="assign-dropdown label-dropdown">
+                {unassignedLabels.map((l) => (
+                  <button
+                    key={l.id}
+                    className="assign-option"
+                    onClick={() => { handleAddLabel(l.id); setShowLabelPicker(false); }}
+                  >
+                    <span className="label-dot" style={{ backgroundColor: l.color }} />
+                    <span>{l.name}</span>
+                  </button>
+                ))}
+                <div className="label-create-row">
+                  <input
+                    type="text"
+                    placeholder="New label name..."
+                    value={newLabelName}
+                    onChange={(e) => setNewLabelName(e.target.value)}
+                    className="label-create-input"
+                  />
+                  <div className="label-color-row">
+                    {LABEL_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        className={`color-swatch color-swatch-sm ${newLabelColor === c ? 'active' : ''}`}
+                        style={{ backgroundColor: c }}
+                        onClick={() => setNewLabelColor(c)}
+                        type="button"
+                      />
+                    ))}
+                  </div>
+                  <button className="btn btn-primary btn-sm" onClick={handleCreateLabel} type="button">
+                    <Plus size={12} /> Create
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Assignees */}
           <div className="form-group">
             <label><Users size={14} /> Assignees</label>
             <div className="assignees-list">
@@ -173,6 +354,49 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Comments */}
+          <div className="form-group comments-section">
+            <label><MessageSquare size={14} /> Comments ({comments.length})</label>
+            <form className="comment-form" onSubmit={handleAddComment}>
+              <input
+                ref={commentInputRef}
+                type="text"
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                id="comment-input"
+              />
+              <button type="submit" className="btn btn-primary btn-sm" disabled={!newComment.trim()}>
+                <Send size={14} />
+              </button>
+            </form>
+            <div className="comments-list">
+              {commentsLoading ? (
+                <div className="spinner-sm" style={{ margin: '8px auto' }} />
+              ) : comments.length === 0 ? (
+                <p className="comments-empty">No comments yet. Be the first to comment!</p>
+              ) : (
+                comments.map((c) => (
+                  <div key={c.id} className="comment-item">
+                    <div className="avatar avatar-xs">{c.user.name.charAt(0).toUpperCase()}</div>
+                    <div className="comment-body">
+                      <div className="comment-header">
+                        <span className="comment-author">{c.user.name}</span>
+                        <span className="comment-time">
+                          {new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="comment-text">{c.content}</p>
+                    </div>
+                    <button className="icon-btn icon-btn-sm comment-delete" onClick={() => handleDeleteComment(c.id)} title="Delete comment">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="task-meta">

@@ -60,7 +60,7 @@ export default function DashboardPage() {
           <h1>TaskFlow</h1>
         </div>
         <div className="header-right">
-          <div className="user-info">
+          <div className="user-info" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }} title="Profile settings">
             <div className="avatar">{user?.name?.charAt(0).toUpperCase()}</div>
             <span>{user?.name}</span>
           </div>
