@@ -95,7 +95,7 @@ export default function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
 
         <div className="flex items-center justify-between mt-3">
           {task.dueDate ? (
-            <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-sm transition-all duration-300 ${
+            <span className={`task-due flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-sm transition-all duration-300 ${
               dueStatus === 'overdue'
                 ? 'bg-destructive/15 text-destructive animate-pulse-overdue border border-destructive/30'
                 : dueStatus === 'today'

@@ -135,19 +135,23 @@ describe('Auth API', () => {
 describe('Boards API', () => {
   let app: express.Express;
   let token: string;
+  const boardTestEmail = `test-board-${Date.now()}@example.com`;
 
   beforeAll(async () => {
     app = await createTestApp();
 
-    // Login with demo user
+    // Create a fresh test user for board tests
     const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'demo@example.com', password: 'password123' });
+      .post('/api/auth/signup')
+      .send({ email: boardTestEmail, name: 'Board Test User', password: 'password123' });
 
     token = res.body.token;
   });
 
   afterAll(async () => {
+    await prisma.user.deleteMany({
+      where: { email: boardTestEmail },
+    });
     await prisma.$disconnect();
   });
 
