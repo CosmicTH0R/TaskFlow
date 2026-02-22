@@ -7,11 +7,22 @@ const prisma = new PrismaClient();
 // PUT /api/profile
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   const userId = (req as any).userId;
-  const { name } = req.body;
+  const { name, email } = req.body;
+
+  const dataToUpdate: any = {};
+  if (name) dataToUpdate.name = name;
+  if (email) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing && existing.id !== userId) {
+      res.status(400).json({ error: 'Email is already in use' });
+      return;
+    }
+    dataToUpdate.email = email;
+  }
 
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { name },
+    data: dataToUpdate,
     select: { id: true, email: true, name: true, avatar: true, createdAt: true },
   });
 

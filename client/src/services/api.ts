@@ -109,7 +109,7 @@ export const labelsAPI = {
 
 // Profile
 export const profileAPI = {
-  update: (data: { name: string }) => api.put('/profile', data),
+  update: (data: { name?: string; email?: string }) => api.put('/profile', data),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.put('/profile/password', data),
 };
