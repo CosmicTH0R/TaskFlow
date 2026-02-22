@@ -50,6 +50,8 @@ export interface Task {
   assignees: TaskAssignee[];
   labels?: TaskLabel[];
   list?: { id: string; title: string };
+  subTasks?: SubTask[];
+  dependencies?: TaskDependency[];
   createdAt: string;
   updatedAt: string;
 }
@@ -103,4 +105,21 @@ export interface Pagination {
   limit: number;
   total: number;
   totalPages: number;
+}
+
+export interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
+  position: number;
+  taskId: string;
+  createdAt: string;
+}
+
+export interface TaskDependency {
+  id: string;
+  taskId: string;
+  dependsOnTaskId: string;
+  dependsOn: { id: string; title: string; listId: string };
+  createdAt: string;
 }

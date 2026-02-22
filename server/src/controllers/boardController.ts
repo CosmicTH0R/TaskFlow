@@ -65,6 +65,10 @@ export const getBoard = async (req: AuthRequest, res: Response): Promise<void> =
                 labels: {
                   include: { label: true },
                 },
+                subTasks: {
+                  orderBy: { position: 'asc' },
+                  select: { id: true, completed: true },
+                },
               },
             },
           },

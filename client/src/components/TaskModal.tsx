@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Task, BoardMember, Comment, Label, TaskLabel } from '../types';
+import { Task, BoardMember, Comment, Label, TaskLabel, SubTask, TaskDependency } from '../types';
 import { useBoardStore } from '../store/boardStore';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
@@ -8,7 +8,7 @@ import { getSocket } from '../services/socket';
 import ConfirmModal from './ConfirmModal';
 import {
   X, Flag, Calendar, AlignLeft, Users, Trash2, UserPlus,
-  Save, Clock, MessageSquare, Send, Tag, Plus
+  Save, Clock, MessageSquare, Send, Tag, Plus, ListChecks, Link2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
@@ -17,6 +17,8 @@ import { Textarea } from './ui/textarea';
 import { Label as ShadcnLabel } from './ui/label';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { RichTextEditor } from './RichTextEditor';
+import SubTaskList from './SubTaskList';
+import DependencyPicker from './DependencyPicker';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
@@ -64,10 +66,15 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[0]);
 
+  // Subtasks & Dependencies
+  const [subTasks, setSubTasks] = useState<SubTask[]>([]);
+  const [taskDeps, setTaskDeps] = useState<TaskDependency[]>([]);
+
   // Load comments and board labels
   useEffect(() => {
     loadComments();
     loadBoardLabels();
+    loadDetails();
 
     // Real-time comment events
     const socket = getSocket();
@@ -98,6 +105,14 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
       /* silent */
     }
     setCommentsLoading(false);
+  };
+
+  const loadDetails = async () => {
+    try {
+      const { data } = await tasksAPI.getDetails(task.id);
+      setSubTasks(data.subTasks || []);
+      setTaskDeps(data.dependencies || []);
+    } catch { /* silent */ }
   };
 
   const loadBoardLabels = async () => {
@@ -439,8 +454,20 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
             </div>
           </motion.div>
 
+          {/* Subtasks */}
+          <motion.div className="space-y-2" custom={5} initial="hidden" animate="visible" variants={sectionVariants}>
+            <ShadcnLabel className="flex items-center gap-2"><ListChecks className="w-4 h-4" /> Subtasks</ShadcnLabel>
+            <SubTaskList taskId={task.id} subTasks={subTasks} onChange={setSubTasks} canEdit={canEdit} />
+          </motion.div>
+
+          {/* Dependencies */}
+          <motion.div className="space-y-2" custom={6} initial="hidden" animate="visible" variants={sectionVariants}>
+            <ShadcnLabel className="flex items-center gap-2"><Link2 className="w-4 h-4" /> Blocked By</ShadcnLabel>
+            <DependencyPicker taskId={task.id} dependencies={taskDeps} onChange={setTaskDeps} canEdit={canEdit} />
+          </motion.div>
+
           {/* Comments */}
-          <motion.div className="space-y-3 pt-4 border-t" custom={5} initial="hidden" animate="visible" variants={sectionVariants}>
+          <motion.div className="space-y-3 pt-4 border-t" custom={7} initial="hidden" animate="visible" variants={sectionVariants}>
             <ShadcnLabel className="flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Comments ({comments.length})</ShadcnLabel>
 
             <form onSubmit={handleAddComment} className="flex gap-2">

@@ -1,5 +1,5 @@
 import { Task } from '../types';
-import { Calendar, Flag } from 'lucide-react';
+import { Calendar, Flag, ListChecks } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -76,6 +76,22 @@ export default function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
             {task.description.replace(/<[^>]*>?/gm, '')}
           </p>
         )}
+
+        {/* Subtask progress */}
+        {task.subTasks && task.subTasks.length > 0 && (() => {
+          const total = task.subTasks!.length;
+          const done = task.subTasks!.filter((s: any) => s.completed).length;
+          const pct = Math.round((done / total) * 100);
+          return (
+            <div className="flex items-center gap-2 mb-2 mt-1">
+              <ListChecks className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">{done}/{total}</span>
+            </div>
+          );
+        })()}
 
         <div className="flex items-center justify-between mt-3">
           {task.dueDate ? (

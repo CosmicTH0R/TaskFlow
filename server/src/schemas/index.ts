@@ -79,7 +79,22 @@ export const assignTaskSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
 });
 
-// ─── Comments ────────────────────────────────────────────────────────────────
+// ─── SubTasks ────────────────────────────────────────────────────────────────
+
+export const createSubTaskSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(500),
+});
+
+export const updateSubTaskSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  completed: z.boolean().optional(),
+});
+
+// ─── Dependencies ────────────────────────────────────────────────────────────
+
+export const addDependencySchema = z.object({
+  dependsOnTaskId: z.string().min(1, 'Depends-on Task ID is required'),
+});
 
 export const createCommentSchema = z.object({
   content: z.string().min(1, 'Comment cannot be empty').max(5000, 'Comment is too long'),

@@ -87,6 +87,9 @@ model Task {
   activity  Activity[]
   comments  Comment[]
   labels    TaskLabel[]
+  subTasks  SubTask[]
+  blockedBy TaskDependency[] @relation("BlockedTask")
+  blocking  TaskDependency[] @relation("BlockerTask")
 
   @@index([listId, position])
   @@index([boardId])
@@ -160,4 +163,31 @@ model TaskLabel {
   @@unique([taskId, labelId])
   @@index([taskId])
   @@index([labelId])
+}
+
+model SubTask {
+  id        String   @id @default(uuid())
+  title     String
+  completed Boolean  @default(false)
+  position  Int
+  taskId    String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, position])
+}
+
+model TaskDependency {
+  id              String   @id @default(uuid())
+  taskId          String
+  dependsOnTaskId String
+  createdAt       DateTime @default(now())
+
+  task      Task @relation("BlockedTask", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn Task @relation("BlockerTask", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnTaskId])
+  @@index([taskId])
+  @@index([dependsOnTaskId])
 }

@@ -80,6 +80,25 @@ export const tasksAPI = {
     api.post(`/tasks/${id}/assign`, { userId }),
   unassign: (id: string, userId: string) =>
     api.delete(`/tasks/${id}/assign/${userId}`),
+  getDetails: (id: string) => api.get(`/tasks/${id}/details`),
+};
+
+// Subtasks
+export const subtasksAPI = {
+  create: (taskId: string, title: string) =>
+    api.post(`/tasks/${taskId}/subtasks`, { title }),
+  update: (taskId: string, subId: string, data: { title?: string; completed?: boolean }) =>
+    api.patch(`/tasks/${taskId}/subtasks/${subId}`, data),
+  delete: (taskId: string, subId: string) =>
+    api.delete(`/tasks/${taskId}/subtasks/${subId}`),
+};
+
+// Dependencies
+export const dependenciesAPI = {
+  add: (taskId: string, dependsOnTaskId: string) =>
+    api.post(`/tasks/${taskId}/dependencies`, { dependsOnTaskId }),
+  remove: (taskId: string, depId: string) =>
+    api.delete(`/tasks/${taskId}/dependencies/${depId}`),
 };
 
 // Activity
