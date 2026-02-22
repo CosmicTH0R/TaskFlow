@@ -15,6 +15,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label as ShadcnLabel } from './ui/label';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { RichTextEditor } from './RichTextEditor';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 const PRIORITY_COLORS: Record<string, string> = {
@@ -230,13 +231,10 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
             <ShadcnLabel htmlFor="task-desc-input" className="flex items-center gap-2">
               <AlignLeft className="w-4 h-4" /> Description
             </ShadcnLabel>
-            <Textarea
-              id="task-desc-input"
+            <RichTextEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a description..."
-              rows={4}
-              className="resize-none"
+              onChange={setDescription}
+              placeholder="Add a detailed description..."
             />
           </div>
 

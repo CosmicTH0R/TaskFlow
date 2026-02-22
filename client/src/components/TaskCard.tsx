@@ -69,7 +69,7 @@ export default function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
         <h4 className="text-sm font-semibold leading-tight text-foreground mb-1" style={{ wordBreak: 'break-word' }}>{task.title}</h4>
         {task.description && (
           <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-            {task.description}
+            {task.description.replace(/<[^>]*>?/gm, '')}
           </p>
         )}
         

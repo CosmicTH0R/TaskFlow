@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -153,4 +154,16 @@
 
 .animate-float {
   animation: float 8s ease-in-out infinite;
+}
+
+/* Force TipTap editor text to use the app's foreground color */
+.tiptap.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-code: var(--foreground);
+  color: var(--foreground);
 }
