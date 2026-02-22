@@ -5,6 +5,7 @@ import { ThemeProvider } from './components/ThemeProvider';
 import { useAuthStore } from './store/authStore';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from './components/ui/sonner';
+import { CommandMenu } from './components/CommandMenu';
 import { LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './index.css';
@@ -65,6 +66,7 @@ function App() {
   return (
     <BrowserRouter>
       <Toaster theme="system" position="bottom-right" />
+      <CommandMenu />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
