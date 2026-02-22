@@ -37,6 +37,7 @@ export default function BoardPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+
   const {
     currentBoard, lists, boardLoading,
     fetchBoard, clearBoard, createList, updateList, deleteList,
@@ -44,6 +45,11 @@ export default function BoardPage() {
     handleTaskCreated, handleTaskUpdated, handleTaskDeleted, handleTaskMoved,
     handleListCreated, handleListDeleted,
   } = useBoardStore();
+
+  const currentMember = currentBoard?.members.find((m) => m.userId === user?.id);
+  const currentRole = currentMember?.role || 'VIEWER';
+  const canEdit = currentRole === 'OWNER' || currentRole === 'EDITOR';
+  const isOwner = currentRole === 'OWNER';
 
   const [showActivity, setShowActivity] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
@@ -126,6 +132,7 @@ export default function BoardPage() {
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!canEdit) return;
     const { active, over } = event;
     setActiveTask(null);
 
@@ -201,6 +208,18 @@ export default function BoardPage() {
     } catch (err: any) {
       setMemberError(err.response?.data?.error || 'Failed to add member');
       toast.error('Failed to add member');
+    }
+  };
+
+  const handleUpdateMemberRole = async (userId: string, newRole: string) => {
+    if (!id) return;
+    try {
+      const { boardsAPI } = await import('../services/api');
+      await boardsAPI.updateMemberRole(id, userId, newRole);
+      fetchBoard(id);
+      toast.success('Role updated successfully!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to update role');
     }
   };
 
@@ -340,33 +359,49 @@ export default function BoardPage() {
                         {m.user.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-foreground">{m.user.name}</span>
+                    <span className="text-sm font-medium text-foreground flex-1">{m.user.name}</span>
+                    {isOwner && m.userId !== user?.id ? (
+                      <Select
+                        value={m.role}
+                        onValueChange={(val) => handleUpdateMemberRole(m.userId, val)}
+                      >
+                        <SelectTrigger className="h-7 w-24 px-2 py-0 text-xs bg-transparent border-white/10 hover:bg-white/5 transition-colors">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="VIEWER" className="text-xs">Viewer</SelectItem>
+                          <SelectItem value="EDITOR" className="text-xs">Editor</SelectItem>
+                          <SelectItem value="OWNER" className="text-xs">Owner</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
                       <span className="text-xs text-muted-foreground capitalize">{m.role.toLowerCase()}</span>
-                    </div>
+                    )}
                   </motion.div>
                 ))}
               </div>
               
-              <div className="pt-6 border-t border-border/50">
-                <h4 className="text-sm font-medium mb-3">Add Member</h4>
-                <form onSubmit={handleAddMember} className="flex flex-col gap-3">
-                  <div className="flex gap-2">
-                    <Input
-                      type="email"
-                      placeholder="Email address..."
-                      value={newMemberEmail}
-                      onChange={(e) => setNewMemberEmail(e.target.value)}
-                      id="add-member-input"
-                      className="flex-1 bg-white/5"
-                    />
-                    <Button type="submit" id="add-member-btn" disabled={!newMemberEmail.trim()} className="btn-press">
-                      <UserPlus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  {memberError && <p className="text-sm text-destructive">{memberError}</p>}
-                </form>
-              </div>
+              {canEdit && (
+                <div className="pt-6 border-t border-border/50">
+                  <h4 className="text-sm font-medium mb-3">Add Member</h4>
+                  <form onSubmit={handleAddMember} className="flex flex-col gap-3">
+                    <div className="flex gap-2">
+                      <Input
+                        type="email"
+                        placeholder="Email address..."
+                        value={newMemberEmail}
+                        onChange={(e) => setNewMemberEmail(e.target.value)}
+                        id="add-member-input"
+                        className="flex-1 bg-white/5"
+                      />
+                      <Button type="submit" id="add-member-btn" disabled={!newMemberEmail.trim()} className="btn-press">
+                        <UserPlus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {memberError && <p className="text-sm text-destructive">{memberError}</p>}
+                  </form>
+                </div>
+              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -417,15 +452,17 @@ export default function BoardPage() {
                         </span>
                       </h3>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive btn-press"
-                      onClick={() => setConfirmDeleteList(list.id)}
-                      title="Delete list"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive btn-press"
+                        onClick={() => setConfirmDeleteList(list.id)}
+                        title="Delete list"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
 
                   <SortableContext items={list.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
@@ -460,88 +497,92 @@ export default function BoardPage() {
                     </div>
                   </SortableContext>
 
-                  <div className="p-3 pt-1 flex-none border-t border-transparent">
-                    {addingTaskListId === list.id ? (
-                      <form onSubmit={(e) => handleCreateTask(e, list.id)} className="space-y-2">
-                        <Input
-                          value={newTaskTitle}
-                          onChange={(e) => setNewTaskTitle(e.target.value)}
-                          placeholder="Task title..."
-                          autoFocus
-                          id="new-task-input"
-                          className="h-9 bg-background/50 border-white/10"
-                          onBlur={() => { if (!newTaskTitle.trim()) setAddingTaskListId(null); }}
-                        />
-                        <div className="flex items-center gap-2">
-                          <Button type="submit" size="sm" className="h-8 btn-press">Add</Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="w-8 h-8 text-muted-foreground"
-                            onClick={() => setAddingTaskListId(null)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </form>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-white/5 h-9 px-2 btn-press"
-                        onClick={() => { setAddingTaskListId(list.id); setNewTaskTitle(''); }}
-                      >
-                        <Plus className="w-4 h-4 mr-2" /> Add task
-                      </Button>
-                    )}
-                  </div>
+                  {canEdit && (
+                    <div className="p-3 pt-1 flex-none border-t border-transparent">
+                      {addingTaskListId === list.id ? (
+                        <form onSubmit={(e) => handleCreateTask(e, list.id)} className="space-y-2">
+                          <Input
+                            value={newTaskTitle}
+                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                            placeholder="Task title..."
+                            autoFocus
+                            id="new-task-input"
+                            className="h-9 bg-background/50 border-white/10"
+                            onBlur={() => { if (!newTaskTitle.trim()) setAddingTaskListId(null); }}
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button type="submit" size="sm" className="h-8 btn-press">Add</Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="w-8 h-8 text-muted-foreground"
+                              onClick={() => setAddingTaskListId(null)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </form>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-white/5 h-9 px-2 btn-press"
+                          onClick={() => { setAddingTaskListId(list.id); setNewTaskTitle(''); }}
+                        >
+                          <Plus className="w-4 h-4 mr-2" /> Add task
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               ))}
 
-              {addingList ? (
-                <motion.div
-                  className="w-[280px] sm:w-[320px] shrink-0 bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-3"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  <form onSubmit={handleCreateList} className="space-y-2">
-                    <Input
-                      value={newListTitle}
-                      onChange={(e) => setNewListTitle(e.target.value)}
-                      placeholder="List title..."
-                      autoFocus
-                      className="bg-background/50"
-                      onBlur={() => { if (!newListTitle.trim()) setAddingList(false); }}
-                    />
-                    <div className="flex items-center gap-2">
-                      <Button type="submit" size="sm" className="h-8 btn-press">Add List</Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8 text-muted-foreground"
-                        onClick={() => setAddingList(false)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </form>
-                </motion.div>
-              ) : (
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    variant="ghost"
-                    className="w-[280px] sm:w-[320px] shrink-0 h-12 justify-start text-muted-foreground/80 hover:text-foreground hover:bg-white/5 border border-dashed border-white/10 hover:border-primary/30 transition-all duration-300"
-                    onClick={() => { setAddingList(true); setNewListTitle(''); }}
-                    id="add-list-btn"
+              {canEdit && (
+                addingList ? (
+                  <motion.div
+                    className="w-[280px] sm:w-[320px] shrink-0 bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-3"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.25 }}
                   >
-                    <Plus className="w-5 h-5 mr-2" /> Add List
-                  </Button>
-                </motion.div>
+                    <form onSubmit={handleCreateList} className="space-y-2">
+                      <Input
+                        value={newListTitle}
+                        onChange={(e) => setNewListTitle(e.target.value)}
+                        placeholder="List title..."
+                        autoFocus
+                        className="bg-background/50"
+                        onBlur={() => { if (!newListTitle.trim()) setAddingList(false); }}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button type="submit" size="sm" className="h-8 btn-press">Add List</Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="w-8 h-8 text-muted-foreground"
+                          onClick={() => setAddingList(false)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </form>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      variant="ghost"
+                      className="w-[280px] sm:w-[320px] shrink-0 h-12 justify-start text-muted-foreground/80 hover:text-foreground hover:bg-white/5 border border-dashed border-white/10 hover:border-primary/30 transition-all duration-300"
+                      onClick={() => { setAddingList(true); setNewListTitle(''); }}
+                      id="add-list-btn"
+                    >
+                      <Plus className="w-5 h-5 mr-2" /> Add List
+                    </Button>
+                  </motion.div>
+                )
               )}
             </div>
 

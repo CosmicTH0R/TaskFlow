@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
+import { checkBoardRole } from '../middleware/rbac';
 
 const prisma = new PrismaClient();
 
@@ -63,6 +64,12 @@ export const createTask = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    const canEdit = await checkBoardRole(req.userId!, boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can create tasks' });
+      return;
+    }
+
     const maxPos = await prisma.task.aggregate({
       where: { listId },
       _max: { position: true },
@@ -120,6 +127,12 @@ export const updateTask = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    const canEdit = await checkBoardRole(req.userId!, existing.boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can update tasks' });
+      return;
+    }
+
     const task = await prisma.task.update({
       where: { id: req.params.id },
       data: {
@@ -170,6 +183,12 @@ export const deleteTask = async (req: AuthRequest, res: Response): Promise<void>
 
     const { boardId, listId, title } = task;
 
+    const canEdit = await checkBoardRole(req.userId!, boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can delete tasks' });
+      return;
+    }
+
     await prisma.task.delete({ where: { id: req.params.id } });
 
     // Re-order remaining tasks
@@ -214,6 +233,12 @@ export const moveTask = async (req: AuthRequest, res: Response): Promise<void> =
 
     if (!task) {
       res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    const canEdit = await checkBoardRole(req.userId!, task.boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can move tasks' });
       return;
     }
 
@@ -306,6 +331,12 @@ export const assignTask = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    const canEdit = await checkBoardRole(req.userId!, task.boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can assign tasks' });
+      return;
+    }
+
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       res.status(404).json({ error: 'User not found' });
@@ -348,6 +379,12 @@ export const unassignTask = async (req: AuthRequest, res: Response): Promise<voi
     const task = await prisma.task.findUnique({ where: { id: req.params.id } });
     if (!task) {
       res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    const canEdit = await checkBoardRole(req.userId!, task.boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can unassign tasks' });
       return;
     }
 

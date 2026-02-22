@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Task, BoardMember, Comment, Label, TaskLabel } from '../types';
 import { useBoardStore } from '../store/boardStore';
+import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { tasksAPI, commentsAPI, labelsAPI } from '../services/api';
 import { getSocket } from '../services/socket';
@@ -44,6 +45,11 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
   const [saving, setSaving] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const { user } = useAuthStore();
+  const currentMember = boardMembers.find((m) => m.userId === user?.id);
+  const currentRole = currentMember?.role || 'VIEWER';
+  const canEdit = currentRole === 'OWNER' || currentRole === 'EDITOR';
 
   // Comments
   const [comments, setComments] = useState<Comment[]>([]);
@@ -232,6 +238,7 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="font-medium"
+              readOnly={!canEdit}
             />
           </motion.div>
 
@@ -242,7 +249,8 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
             <RichTextEditor
               value={description}
               onChange={setDescription}
-              placeholder="Add a detailed description..."
+              placeholder={canEdit ? "Add a detailed description..." : "No description provided."}
+              readOnly={!canEdit}
             />
           </motion.div>
 
@@ -257,9 +265,9 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
                     <Button
                       variant={priority === p ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setPriority(p)}
+                      onClick={() => { if (canEdit) setPriority(p); }}
                       style={priority === p ? { backgroundColor: PRIORITY_COLORS[p], borderColor: PRIORITY_COLORS[p], color: '#fff' } : { color: PRIORITY_COLORS[p], borderColor: PRIORITY_COLORS[p] }}
-                      className={`btn-press transition-all duration-200 ${priority !== p ? "hover:bg-transparent" : ""}`}
+                      className={`transition-all duration-200 ${priority !== p && canEdit ? "hover:bg-transparent" : ""} ${!canEdit ? "cursor-default opacity-80" : "btn-press"}`}
                     >
                       {p}
                     </Button>
@@ -277,6 +285,7 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                disabled={!canEdit}
               />
             </div>
           </motion.div>
@@ -297,17 +306,20 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
                     layout
                   >
                     {tl.label.name}
-                    <button className="hover:text-foreground ml-1 transition-colors" onClick={() => handleRemoveLabel(tl.labelId)}>
-                      <X className="w-3 h-3" />
-                    </button>
+                    {canEdit && (
+                      <button className="hover:text-foreground ml-1 transition-colors" onClick={() => handleRemoveLabel(tl.labelId)}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
                   </motion.span>
                 ))}
               </AnimatePresence>
 
-              <div className="relative">
-                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full btn-press" onClick={() => setShowLabelPicker(!showLabelPicker)}>
-                  <Plus className="w-3 h-3 mr-1" /> Add Label
-                </Button>
+              {canEdit && (
+                <div className="relative">
+                  <Button variant="outline" size="sm" className="h-7 text-xs rounded-full btn-press" onClick={() => setShowLabelPicker(!showLabelPicker)}>
+                    <Plus className="w-3 h-3 mr-1" /> Add Label
+                  </Button>
 
                 <AnimatePresence>
                   {showLabelPicker && (
@@ -360,6 +372,7 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
                   )}
                 </AnimatePresence>
               </div>
+              )}
             </div>
           </motion.div>
 
@@ -381,14 +394,16 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
                         <AvatarFallback className="text-[10px] bg-primary/20 text-primary">{a.user.name.charAt(0).toUpperCase()}</AvatarFallback>
                      </Avatar>
                      <span>{a.user.name}</span>
-                     <button className="hover:text-destructive text-muted-foreground transition-colors" onClick={() => handleUnassign(a.userId)}>
-                       <X className="w-3.5 h-3.5" />
-                     </button>
+                     {canEdit && (
+                       <button className="hover:text-destructive text-muted-foreground transition-colors" onClick={() => handleUnassign(a.userId)}>
+                         <X className="w-3.5 h-3.5" />
+                       </button>
+                     )}
                    </motion.div>
                 ))}
               </AnimatePresence>
 
-              {unassignedMembers.length > 0 && (
+              {canEdit && unassignedMembers.length > 0 && (
                 <div className="relative">
                   <Button variant="outline" size="sm" className="h-8 rounded-full btn-press" onClick={() => setShowAssign(!showAssign)}>
                     <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Assign
@@ -486,19 +501,27 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between items-center sm:gap-0 mt-4 pt-4 border-t">
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-            <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} className="btn-press">
-              <Trash2 className="w-4 h-4 mr-1.5" /> Delete
-            </Button>
-          </motion.div>
-          <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-            <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none btn-press">Cancel</Button>
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex-1 sm:flex-none">
-              <Button onClick={handleSave} disabled={saving} className="w-full btn-press">
-                <Save className="w-4 h-4 mr-1.5" /> {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </motion.div>
-          </div>
+          {canEdit ? (
+            <>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} className="btn-press">
+                  <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                </Button>
+              </motion.div>
+              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none btn-press">Cancel</Button>
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex-1 sm:flex-none">
+                  <Button onClick={handleSave} disabled={saving} className="w-full btn-press">
+                    <Save className="w-4 h-4 mr-1.5" /> {saving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </motion.div>
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-end w-full">
+              <Button variant="outline" onClick={onClose} className="btn-press">Close</Button>
+            </div>
+          )}
         </DialogFooter>
 
       </DialogContent>

@@ -13,9 +13,10 @@ interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  readOnly?: boolean;
 }
 
-export function RichTextEditor({ value, onChange, placeholder = "Write something..." }: RichTextEditorProps) {
+export function RichTextEditor({ value, onChange, placeholder = "Write something...", readOnly = false }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -28,6 +29,7 @@ export function RichTextEditor({ value, onChange, placeholder = "Write something
       Image,
     ],
     content: value,
+    editable: !readOnly,
     editorProps: {
       attributes: {
         class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[150px] p-4',
@@ -68,10 +70,11 @@ export function RichTextEditor({ value, onChange, placeholder = "Write something
   };
 
   return (
-    <div className="border border-input bg-background rounded-md overflow-hidden">
+    <div className={`border bg-background rounded-md overflow-hidden ${readOnly ? 'border-transparent' : 'border-input'}`}>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-1 border-b border-border bg-muted/40">
-        <Button
+      {!readOnly && (
+        <div className="flex flex-wrap items-center gap-1 p-1 border-b border-border bg-muted/40">
+          <Button
           type="button"
           variant="ghost"
           size="icon"
@@ -175,9 +178,10 @@ export function RichTextEditor({ value, onChange, placeholder = "Write something
           <ImageIcon className="w-4 h-4" />
         </Button>
       </div>
+      )}
 
       {/* Editor Context */}
-      <div className="bg-card text-foreground cursor-text max-h-[60vh] overflow-y-auto" onClick={() => editor.chain().focus().run()}>
+      <div className={`bg-card text-foreground max-h-[60vh] overflow-y-auto ${!readOnly ? 'cursor-text' : 'cursor-default'}`} onClick={() => { if (!readOnly) editor.chain().focus().run(); }}>
         <EditorContent editor={editor} />
       </div>
     </div>

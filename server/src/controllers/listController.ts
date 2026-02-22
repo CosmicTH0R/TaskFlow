@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
+import { checkBoardRole } from '../middleware/rbac';
 
 const prisma = new PrismaClient();
 
@@ -34,6 +35,12 @@ export const createList = async (req: AuthRequest, res: Response): Promise<void>
 
     if (!title || !boardId) {
       res.status(400).json({ error: 'Title and boardId are required' });
+      return;
+    }
+
+    const canEdit = await checkBoardRole(req.userId!, boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can create lists' });
       return;
     }
 
@@ -77,6 +84,18 @@ export const updateList = async (req: AuthRequest, res: Response): Promise<void>
   try {
     const { title } = req.body;
 
+    const listToUpdate = await prisma.list.findUnique({ where: { id: req.params.id } });
+    if (!listToUpdate) {
+      res.status(404).json({ error: 'List not found' });
+      return;
+    }
+
+    const canEdit = await checkBoardRole(req.userId!, listToUpdate.boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can modify lists' });
+      return;
+    }
+
     const list = await prisma.list.update({
       where: { id: req.params.id },
       data: { title },
@@ -99,6 +118,12 @@ export const deleteList = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     const { boardId } = list;
+
+    const canEdit = await checkBoardRole(req.userId!, boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can delete lists' });
+      return;
+    }
 
     await prisma.list.delete({ where: { id: req.params.id } });
 
@@ -143,6 +168,12 @@ export const reorderLists = async (req: AuthRequest, res: Response): Promise<voi
 
     if (!boardId || !listIds || !Array.isArray(listIds)) {
       res.status(400).json({ error: 'boardId and listIds array are required' });
+      return;
+    }
+
+    const canEdit = await checkBoardRole(req.userId!, boardId, ['OWNER', 'EDITOR']);
+    if (!canEdit) {
+      res.status(403).json({ error: 'Only owners and editors can reorder lists' });
       return;
     }
 

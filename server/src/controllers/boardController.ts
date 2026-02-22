@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
+import { checkBoardRole } from '../middleware/rbac';
 
 const prisma = new PrismaClient();
 
@@ -180,7 +181,8 @@ export const deleteBoard = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    if (board.ownerId !== req.userId) {
+    const isOwner = await checkBoardRole(req.userId!, req.params.id, ['OWNER']);
+    if (!isOwner) {
       res.status(403).json({ error: 'Only the owner can delete the board' });
       return;
     }
@@ -195,7 +197,7 @@ export const deleteBoard = async (req: AuthRequest, res: Response): Promise<void
 
 export const addMember = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { email } = req.body;
+    const { email, role } = req.body;
 
     const board = await prisma.board.findUnique({
       where: { id: req.params.id },
@@ -207,9 +209,9 @@ export const addMember = async (req: AuthRequest, res: Response): Promise<void> 
       return;
     }
 
-    const isMember = board.members.some((m) => m.userId === req.userId);
-    if (!isMember) {
-      res.status(403).json({ error: 'Not a member of this board' });
+    const canAdd = await checkBoardRole(req.userId!, req.params.id, ['OWNER', 'EDITOR']);
+    if (!canAdd) {
+      res.status(403).json({ error: 'Only owners and editors can add members' });
       return;
     }
 
@@ -226,7 +228,7 @@ export const addMember = async (req: AuthRequest, res: Response): Promise<void> 
     }
 
     const membership = await prisma.boardMember.create({
-      data: { boardId: board.id, userId: user.id },
+      data: { boardId: board.id, userId: user.id, role: role || 'VIEWER' },
       include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
     });
 
@@ -258,7 +260,8 @@ export const removeMember = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    if (board.ownerId !== req.userId) {
+    const isOwner = await checkBoardRole(req.userId!, req.params.id, ['OWNER']);
+    if (!isOwner) {
       res.status(403).json({ error: 'Only the owner can remove members' });
       return;
     }
@@ -278,3 +281,33 @@ export const removeMember = async (req: AuthRequest, res: Response): Promise<voi
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const updateMemberRole = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { role } = req.body;
+
+    const isOwner = await checkBoardRole(req.userId!, req.params.id, ['OWNER']);
+    if (!isOwner) {
+      res.status(403).json({ error: 'Only the owner can update member roles' });
+      return;
+    }
+
+    const board = await prisma.board.findUnique({ where: { id: req.params.id } });
+    if (board?.ownerId === req.params.userId) {
+      res.status(400).json({ error: 'Cannot change the role of the board owner' });
+      return;
+    }
+
+    const membership = await prisma.boardMember.update({
+      where: { boardId_userId: { boardId: req.params.id, userId: req.params.userId } },
+      data: { role },
+      include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+    });
+
+    res.json({ member: membership });
+  } catch (error) {
+    console.error('Update member role error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+

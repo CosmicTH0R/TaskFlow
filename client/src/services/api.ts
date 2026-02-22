@@ -45,8 +45,10 @@ export const boardsAPI = {
   update: (id: string, data: { title?: string; description?: string; color?: string }) =>
     api.put(`/boards/${id}`, data),
   delete: (id: string) => api.delete(`/boards/${id}`),
-  addMember: (id: string, email: string) =>
-    api.post(`/boards/${id}/members`, { email }),
+  addMember: (id: string, email: string, role?: string) =>
+    api.post(`/boards/${id}/members`, { email, role }),
+  updateMemberRole: (id: string, userId: string, role: string) =>
+    api.patch(`/boards/${id}/members/${userId}`, { role }),
   removeMember: (id: string, userId: string) =>
     api.delete(`/boards/${id}/members/${userId}`),
 };

@@ -29,6 +29,11 @@ export const updateBoardSchema = z.object({
 
 export const addMemberSchema = z.object({
   email: z.string().email('Invalid email format'),
+  role: z.enum(['VIEWER', 'EDITOR']).optional(),
+});
+
+export const updateMemberRoleSchema = z.object({
+  role: z.enum(['VIEWER', 'EDITOR', 'OWNER']),
 });
 
 // ─── Lists ───────────────────────────────────────────────────────────────────
