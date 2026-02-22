@@ -9,6 +9,12 @@ import {
   X, Flag, Calendar, AlignLeft, Users, Trash2, UserPlus,
   Save, Clock, MessageSquare, Send, Tag, Plus
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Label as ShadcnLabel } from './ui/label';
+import { Avatar, AvatarFallback } from './ui/avatar';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 const PRIORITY_COLORS: Record<string, string> = {
@@ -200,222 +206,250 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
   );
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal task-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Edit Task</h2>
-          <button className="icon-btn" onClick={onClose}><X size={20} /></button>
-        </div>
+    <Dialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-[700px] gap-6 max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Flag className="w-4 h-4" /> 
+            Edit Task
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="task-modal-body">
-          <div className="form-group">
-            <label><Flag size={14} /> Title</label>
-            <input
-              type="text"
+        <div className="flex flex-col gap-6">
+          <div className="space-y-2">
+            <ShadcnLabel htmlFor="task-title-input">Title</ShadcnLabel>
+            <Input
+              id="task-title-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              id="task-title-input"
+              className="font-medium"
             />
           </div>
 
-          <div className="form-group">
-            <label><AlignLeft size={14} /> Description</label>
-            <textarea
+          <div className="space-y-2">
+            <ShadcnLabel htmlFor="task-desc-input" className="flex items-center gap-2">
+              <AlignLeft className="w-4 h-4" /> Description
+            </ShadcnLabel>
+            <Textarea
+              id="task-desc-input"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add a description..."
               rows={4}
-              id="task-desc-input"
+              className="resize-none"
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label><Flag size={14} /> Priority</label>
-              <div className="priority-selector">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <ShadcnLabel className="flex items-center gap-2">
+                <Flag className="w-4 h-4" /> Priority
+              </ShadcnLabel>
+              <div className="flex flex-wrap gap-2">
                 {PRIORITIES.map((p) => (
-                  <button
+                  <Button
                     key={p}
-                    className={`priority-option ${priority === p ? 'active' : ''}`}
-                    style={{
-                      '--priority-color': PRIORITY_COLORS[p],
-                      backgroundColor: priority === p ? PRIORITY_COLORS[p] + '20' : undefined,
-                      color: priority === p ? PRIORITY_COLORS[p] : undefined,
-                      borderColor: priority === p ? PRIORITY_COLORS[p] : undefined,
-                    } as React.CSSProperties}
+                    variant={priority === p ? "default" : "outline"}
+                    size="sm"
                     onClick={() => setPriority(p)}
+                    style={priority === p ? { backgroundColor: PRIORITY_COLORS[p], borderColor: PRIORITY_COLORS[p], color: '#fff' } : { color: PRIORITY_COLORS[p], borderColor: PRIORITY_COLORS[p] }}
+                    className={priority !== p ? "hover:bg-transparent" : ""}
                   >
                     {p}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
 
-            <div className="form-group">
-              <label><Calendar size={14} /> Due Date</label>
-              <input
+            <div className="space-y-2">
+              <ShadcnLabel htmlFor="task-date-input" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" /> Due Date
+              </ShadcnLabel>
+              <Input
+                id="task-date-input"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                id="task-date-input"
               />
             </div>
           </div>
 
           {/* Labels */}
-          <div className="form-group">
-            <label><Tag size={14} /> Labels</label>
-            <div className="labels-list">
+          <div className="space-y-2">
+            <ShadcnLabel className="flex items-center gap-2"><Tag className="w-4 h-4" /> Labels</ShadcnLabel>
+            <div className="flex flex-wrap items-center gap-2">
               {taskLabels.map((tl) => (
                 <span
                   key={tl.id}
-                  className="label-chip"
-                  style={{ backgroundColor: tl.label.color + '25', color: tl.label.color, borderColor: tl.label.color + '40' }}
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  style={{ backgroundColor: tl.label.color + '25', color: tl.label.color, border: `1px solid ${tl.label.color}40` }}
                 >
                   {tl.label.name}
-                  <button className="chip-remove" onClick={() => handleRemoveLabel(tl.labelId)}>
-                    <X size={12} />
+                  <button className="hover:text-foreground ml-1" onClick={() => handleRemoveLabel(tl.labelId)}>
+                    <X className="w-3 h-3" />
                   </button>
                 </span>
               ))}
-              <button className="assignee-add" onClick={() => setShowLabelPicker(!showLabelPicker)}>
-                <Tag size={14} /> Add Label
-              </button>
-            </div>
-            {showLabelPicker && (
-              <div className="assign-dropdown label-dropdown">
-                {unassignedLabels.map((l) => (
-                  <button
-                    key={l.id}
-                    className="assign-option"
-                    onClick={() => { handleAddLabel(l.id); setShowLabelPicker(false); }}
-                  >
-                    <span className="label-dot" style={{ backgroundColor: l.color }} />
-                    <span>{l.name}</span>
-                  </button>
-                ))}
-                <div className="label-create-row">
-                  <input
-                    type="text"
-                    placeholder="New label name..."
-                    value={newLabelName}
-                    onChange={(e) => setNewLabelName(e.target.value)}
-                    className="label-create-input"
-                  />
-                  <div className="label-color-row">
-                    {LABEL_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        className={`color-swatch color-swatch-sm ${newLabelColor === c ? 'active' : ''}`}
-                        style={{ backgroundColor: c }}
-                        onClick={() => setNewLabelColor(c)}
-                        type="button"
+              
+              <div className="relative">
+                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full" onClick={() => setShowLabelPicker(!showLabelPicker)}>
+                  <Plus className="w-3 h-3 mr-1" /> Add Label
+                </Button>
+                
+                {showLabelPicker && (
+                  <div className="absolute top-full mt-2 left-0 w-64 p-3 bg-popover border rounded-md shadow-md z-50 flex flex-col gap-2">
+                    <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+                      {unassignedLabels.map((l) => (
+                        <button
+                          key={l.id}
+                          className="flex items-center gap-2 p-1.5 hover:bg-muted rounded-sm text-sm text-left"
+                          onClick={() => { handleAddLabel(l.id); setShowLabelPicker(false); }}
+                        >
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: l.color }} />
+                          <span>{l.name}</span>
+                        </button>
+                      ))}
+                      {unassignedLabels.length === 0 && <span className="text-xs text-muted-foreground p-1">No labels available to add.</span>}
+                    </div>
+                    
+                    <div className="pt-2 border-t mt-1 flex flex-col gap-2">
+                      <Input
+                        placeholder="New label name..."
+                        value={newLabelName}
+                        onChange={(e) => setNewLabelName(e.target.value)}
+                        className="h-8 text-sm"
                       />
-                    ))}
+                      <div className="flex gap-1 flex-wrap">
+                        {LABEL_COLORS.map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            className={`w-5 h-5 rounded-full border-2 ${newLabelColor === c ? 'border-primary' : 'border-transparent'}`}
+                            style={{ backgroundColor: c }}
+                            onClick={() => setNewLabelColor(c)}
+                          />
+                        ))}
+                      </div>
+                      <Button size="sm" onClick={handleCreateLabel} disabled={!newLabelName.trim()} type="button" className="h-8 w-full">
+                        Create
+                      </Button>
+                    </div>
                   </div>
-                  <button className="btn btn-primary btn-sm" onClick={handleCreateLabel} type="button">
-                    <Plus size={12} /> Create
-                  </button>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Assignees */}
-          <div className="form-group">
-            <label><Users size={14} /> Assignees</label>
-            <div className="assignees-list">
+          <div className="space-y-2">
+            <ShadcnLabel className="flex items-center gap-2"><Users className="w-4 h-4" /> Assignees</ShadcnLabel>
+            <div className="flex flex-wrap items-center gap-2">
               {assignees.map((a) => (
-                <div key={a.id} className="assignee-chip">
-                  <div className="avatar avatar-xs">{a.user.name.charAt(0).toUpperCase()}</div>
-                  <span>{a.user.name}</span>
-                  <button className="chip-remove" onClick={() => handleUnassign(a.userId)}>
-                    <X size={12} />
-                  </button>
-                </div>
+                 <div key={a.id} className="inline-flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-full text-sm">
+                    <Avatar className="w-5 h-5">
+                       <AvatarFallback className="text-[10px] bg-primary/20 text-primary">{a.user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span>{a.user.name}</span>
+                    <button className="hover:text-destructive text-muted-foreground" onClick={() => handleUnassign(a.userId)}>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                 </div>
               ))}
+
               {unassignedMembers.length > 0 && (
-                <button className="assignee-add" onClick={() => setShowAssign(!showAssign)}>
-                  <UserPlus size={14} /> Assign
-                </button>
+                <div className="relative">
+                  <Button variant="outline" size="sm" className="h-8 rounded-full" onClick={() => setShowAssign(!showAssign)}>
+                    <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Assign
+                  </Button>
+                  {showAssign && (
+                    <div className="absolute top-full mt-2 left-0 w-48 py-1 bg-popover border rounded-md shadow-md z-50">
+                      <div className="max-h-48 overflow-y-auto">
+                        {unassignedMembers.map((m) => (
+                          <button
+                            key={m.id}
+                            className="flex items-center gap-2 w-full p-2 hover:bg-muted text-sm text-left"
+                            onClick={() => { handleAssign(m.userId); setShowAssign(false); }}
+                          >
+                            <Avatar className="w-5 h-5">
+                               <AvatarFallback className="text-[10px] bg-primary/20 text-primary">{m.user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span>{m.user.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-            {showAssign && (
-              <div className="assign-dropdown">
-                {unassignedMembers.map((m) => (
-                  <button
-                    key={m.id}
-                    className="assign-option"
-                    onClick={() => { handleAssign(m.userId); setShowAssign(false); }}
-                  >
-                    <div className="avatar avatar-xs">{m.user.name.charAt(0).toUpperCase()}</div>
-                    <span>{m.user.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Comments */}
-          <div className="form-group comments-section">
-            <label><MessageSquare size={14} /> Comments ({comments.length})</label>
-            <form className="comment-form" onSubmit={handleAddComment}>
-              <input
+          <div className="space-y-3 pt-4 border-t">
+            <ShadcnLabel className="flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Comments ({comments.length})</ShadcnLabel>
+            
+            <form onSubmit={handleAddComment} className="flex gap-2">
+              <Input
                 ref={commentInputRef}
-                type="text"
                 placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                id="comment-input"
               />
-              <button type="submit" className="btn btn-primary btn-sm" disabled={!newComment.trim()}>
-                <Send size={14} />
-              </button>
+              <Button type="submit" disabled={!newComment.trim()}>
+                <Send className="w-4 h-4" />
+              </Button>
             </form>
-            <div className="comments-list">
-              {commentsLoading ? (
-                <div className="spinner-sm" style={{ margin: '8px auto' }} />
-              ) : comments.length === 0 ? (
-                <p className="comments-empty">No comments yet. Be the first to comment!</p>
-              ) : (
-                comments.map((c) => (
-                  <div key={c.id} className="comment-item">
-                    <div className="avatar avatar-xs">{c.user.name.charAt(0).toUpperCase()}</div>
-                    <div className="comment-body">
-                      <div className="comment-header">
-                        <span className="comment-author">{c.user.name}</span>
-                        <span className="comment-time">
-                          {new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="comment-text">{c.content}</p>
-                    </div>
-                    <button className="icon-btn icon-btn-sm comment-delete" onClick={() => handleDeleteComment(c.id)} title="Delete comment">
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))
-              )}
+
+            <div className="space-y-4 mt-4">
+               {commentsLoading ? (
+                 <div className="flex justify-center"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+               ) : comments.length === 0 ? (
+                 <p className="text-sm text-muted-foreground text-center py-2">No comments yet. Be the first to comment!</p>
+               ) : (
+                 comments.map((c) => (
+                   <div key={c.id} className="flex gap-3 group">
+                     <Avatar className="w-8 h-8 shrink-0">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                     </Avatar>
+                     <div className="flex-1 space-y-1">
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-2">
+                           <span className="text-sm font-semibold">{c.user.name}</span>
+                           <span className="text-xs text-muted-foreground">
+                             {new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                           </span>
+                         </div>
+                         <Button type="button" variant="ghost" size="icon" className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive" onClick={() => handleDeleteComment(c.id)}>
+                           <Trash2 className="w-3.5 h-3.5" />
+                         </Button>
+                       </div>
+                       <p className="text-sm text-foreground bg-muted/50 p-2.5 rounded-md leading-relaxed">{c.content}</p>
+                     </div>
+                   </div>
+                 ))
+               )}
             </div>
           </div>
 
-          <div className="task-meta">
-            <span><Clock size={12} /> Created {new Date(task.createdAt).toLocaleDateString()}</span>
-          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-4">
+          <Clock className="w-3.5 h-3.5" /> Created {new Date(task.createdAt).toLocaleDateString()}
         </div>
 
-        <div className="modal-actions">
-          <button className="btn btn-danger" onClick={() => setShowDeleteConfirm(true)} id="delete-task-btn">
-            <Trash2 size={14} /> Delete
-          </button>
-          <div className="modal-actions-right">
-            <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving} id="save-task-btn">
-              <Save size={14} /> {saving ? 'Saving...' : 'Save Changes'}
-            </button>
+        <DialogFooter className="gap-2 sm:justify-between items-center sm:gap-0 mt-4 pt-4 border-t">
+          <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
+            <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+          </Button>
+          <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+            <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none">Cancel</Button>
+            <Button onClick={handleSave} disabled={saving} className="flex-1 sm:flex-none">
+              <Save className="w-4 h-4 mr-1.5" /> {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
           </div>
-        </div>
-      </div>
+        </DialogFooter>
+
+      </DialogContent>
 
       {showDeleteConfirm && (
         <ConfirmModal
@@ -426,6 +460,6 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
           onCancel={() => setShowDeleteConfirm(false)}
         />
       )}
-    </div>
+    </Dialog>
   );
 }
