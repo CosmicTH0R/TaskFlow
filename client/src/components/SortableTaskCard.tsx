@@ -20,13 +20,21 @@ export default function SortableTaskCard({ task, onClick }: SortableTaskCardProp
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
+    transition: transition || 'transform 200ms cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+    opacity: isDragging ? 0.3 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onClick={onClick} />
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes} 
+      {...listeners}
+      className={isDragging ? 'rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 overflow-hidden ring-2 ring-primary/20 transition-all' : 'transition-all'}
+    >
+      <div className={isDragging ? 'invisible' : ''}>
+        <TaskCard task={task} onClick={onClick} />
+      </div>
     </div>
   );
 }

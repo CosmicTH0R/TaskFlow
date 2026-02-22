@@ -8,7 +8,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import {
   DndContext, DragEndEvent, DragStartEvent,
   PointerSensor, useSensor, useSensors, closestCorners,
-  DragOverlay
+  DragOverlay, defaultDropAnimationSideEffects, DropAnimation
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import TaskCard from '../components/TaskCard';
@@ -375,6 +375,10 @@ export default function BoardPage() {
             collisionDetection={closestCorners}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            autoScroll={{
+              layoutShiftCompensation: false,
+              acceleration: 15,
+            }}
           >
             <div className="flex gap-4 sm:gap-6 h-full items-start">
               {lists.map((list, listIndex) => (
@@ -539,15 +543,19 @@ export default function BoardPage() {
               )}
             </div>
 
-            <DragOverlay>
+            <DragOverlay dropAnimation={{
+              sideEffects: defaultDropAnimationSideEffects({
+                styles: {
+                  active: {
+                    opacity: '0.4'
+                  }
+                }
+              }),
+              duration: 250,
+              easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+            }}>
               {activeTask ? (
-                <motion.div
-                  initial={{ scale: 1, rotate: 0 }}
-                  animate={{ scale: 1.05, rotate: 2, boxShadow: '0 20px 60px -10px rgba(99, 102, 241, 0.4)' }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <TaskCard task={activeTask} isDragging />
-                </motion.div>
+                <TaskCard task={activeTask} isDragging={true} />
               ) : null}
             </DragOverlay>
           </DndContext>

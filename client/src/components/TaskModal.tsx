@@ -205,7 +205,7 @@ export default function TaskModal({ task, boardMembers, onClose }: TaskModalProp
   );
 
   // Stagger animation for sections
-  const sectionVariants = {
+  const sectionVariants: any = {
     hidden: { opacity: 0, y: 15 },
     visible: (i: number) => ({
       opacity: 1,
