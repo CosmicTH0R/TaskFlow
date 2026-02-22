@@ -135,4 +135,16 @@ export const profileAPI = {
     api.put('/profile/password', data),
 };
 
+// Notes
+export const notesAPI = {
+  list: (params?: { search?: string; page?: number; boardId?: string }) =>
+    api.get('/notes', { params }),
+  get: (id: string) => api.get(`/notes/${id}`),
+  create: (data: { title: string; content?: string; emoji?: string; boardId?: string; parentId?: string }) =>
+    api.post('/notes', data),
+  update: (id: string, data: { title?: string; content?: string; emoji?: string }) =>
+    api.put(`/notes/${id}`, data),
+  delete: (id: string) => api.delete(`/notes/${id}`),
+};
+
 export default api;

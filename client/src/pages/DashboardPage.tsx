@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { useBoardStore } from '../store/boardStore';
 import { toast } from 'sonner';
 import ConfirmModal from '../components/ConfirmModal';
-import { Plus, Search, LogOut, LayoutDashboard, Trash2, Users, ListTodo } from 'lucide-react';
+import { Plus, Search, LogOut, LayoutDashboard, Trash2, Users, ListTodo, StickyNote } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -91,6 +91,9 @@ export default function DashboardPage() {
               </Avatar>
               <span>{user?.name}</span>
             </motion.div>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/notes')} title="Notes" id="notes-btn" className="text-muted-foreground hover:text-foreground btn-press">
+              <StickyNote className="w-4 h-4 mr-2" /> Notes
+            </Button>
             <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout" id="logout-btn" className="text-muted-foreground hover:text-foreground btn-press">
               <LogOut className="w-4 h-4" />
             </Button>

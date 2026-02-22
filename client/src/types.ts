@@ -123,3 +123,15 @@ export interface TaskDependency {
   dependsOn: { id: string; title: string; listId: string };
   createdAt: string;
 }
+
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  emoji: string;
+  userId: string;
+  boardId?: string | null;
+  parentId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

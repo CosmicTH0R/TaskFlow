@@ -122,3 +122,19 @@ export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z.string().min(6, 'New password must be at least 6 characters'),
 });
+
+// ─── Notes ───────────────────────────────────────────────────────────────────
+
+export const createNoteSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200),
+  content: z.string().max(50000).optional(),
+  emoji: z.string().max(10).optional(),
+  boardId: z.string().optional(),
+  parentId: z.string().optional(),
+});
+
+export const updateNoteSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  content: z.string().max(50000).optional(),
+  emoji: z.string().max(10).optional(),
+});

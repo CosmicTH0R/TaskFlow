@@ -18,7 +18,7 @@ import ActivitySidebar from '../components/ActivitySidebar';
 import {
   ArrowLeft, Plus, Trash2,
   Users, Activity as ActivityIcon, UserPlus, X,
-  Search, Keyboard
+  Search, Keyboard, StickyNote
 } from 'lucide-react';
 import { Task } from '../types';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -336,6 +336,17 @@ export default function BoardPage() {
                 <SelectItem value="dueDate">Due date</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto btn-press text-muted-foreground hover:text-foreground"
+              onClick={() => navigate(`/notes?boardId=${id}`)}
+              title="Board Notes"
+              id="board-notes-btn"
+            >
+              <StickyNote className="w-4 h-4 mr-2" /> Notes
+            </Button>
           </div>
         </FadeIn>
 

@@ -15,6 +15,7 @@ import activityRoutes from './routes/activity';
 import commentRoutes from './routes/comments';
 import labelRoutes from './routes/labels';
 import profileRoutes from './routes/profile';
+import noteRoutes from './routes/notes';
 
 // ── Env guard ────────────────────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -77,6 +78,7 @@ app.use('/api/activity', activityRoutes);
 app.use('/api', commentRoutes);
 app.use('/api', labelRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/notes', noteRoutes);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

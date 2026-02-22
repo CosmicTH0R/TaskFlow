@@ -3,6 +3,8 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import SlashCommands from './SlashCommands';
+import { getSuggestionItems, renderItems } from './suggestion';
 import { Button } from './ui/button';
 import { 
   Bold, Italic, Strikethrough, Code, List, ListOrdered, 
@@ -27,6 +29,12 @@ export function RichTextEditor({ value, onChange, placeholder = "Write something
         openOnClick: false,
       }),
       Image,
+      SlashCommands.configure({
+        suggestion: {
+          items: getSuggestionItems,
+          render: renderItems,
+        } as any, // Bypass strict typing for simplicity
+      }),
     ],
     content: value,
     editable: !readOnly,
@@ -70,118 +78,9 @@ export function RichTextEditor({ value, onChange, placeholder = "Write something
   };
 
   return (
-    <div className={`border bg-background rounded-md overflow-hidden ${readOnly ? 'border-transparent' : 'border-input'}`}>
-      {/* Toolbar */}
-      {!readOnly && (
-        <div className="flex flex-wrap items-center gap-1 p-1 border-b border-border bg-muted/40">
-          <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          data-active={editor.isActive('bold')}
-          style={{ backgroundColor: editor.isActive('bold') ? 'var(--accent)' : 'transparent' }}
-        >
-          <Bold className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          data-active={editor.isActive('italic')}
-          style={{ backgroundColor: editor.isActive('italic') ? 'var(--accent)' : 'transparent' }}
-        >
-          <Italic className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          data-active={editor.isActive('strike')}
-          style={{ backgroundColor: editor.isActive('strike') ? 'var(--accent)' : 'transparent' }}
-        >
-          <Strikethrough className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={() => editor.chain().focus().toggleCode().run()}
-          data-active={editor.isActive('code')}
-          style={{ backgroundColor: editor.isActive('code') ? 'var(--accent)' : 'transparent' }}
-        >
-          <Code className="w-4 h-4" />
-        </Button>
-        
-        <div className="w-px h-4 bg-border mx-1" />
-        
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          data-active={editor.isActive('bulletList')}
-          style={{ backgroundColor: editor.isActive('bulletList') ? 'var(--accent)' : 'transparent' }}
-        >
-          <List className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          data-active={editor.isActive('orderedList')}
-          style={{ backgroundColor: editor.isActive('orderedList') ? 'var(--accent)' : 'transparent' }}
-        >
-          <ListOrdered className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          data-active={editor.isActive('blockquote')}
-          style={{ backgroundColor: editor.isActive('blockquote') ? 'var(--accent)' : 'transparent' }}
-        >
-          <Quote className="w-4 h-4" />
-        </Button>
-        
-        <div className="w-px h-4 bg-border mx-1" />
-        
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={setLink}
-          data-active={editor.isActive('link')}
-          style={{ backgroundColor: editor.isActive('link') ? 'var(--accent)' : 'transparent' }}
-        >
-          <LinkIcon className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 rounded-sm"
-          onClick={addImage}
-        >
-          <ImageIcon className="w-4 h-4" />
-        </Button>
-      </div>
-      )}
-
+    <div className={`bg-transparent rounded-md overflow-hidden ${readOnly ? '' : 'focus-within:ring-0'}`}>
       {/* Editor Context */}
-      <div className={`bg-card text-foreground max-h-[60vh] overflow-y-auto ${!readOnly ? 'cursor-text' : 'cursor-default'}`} onClick={() => { if (!readOnly) editor.chain().focus().run(); }}>
+      <div className={`bg-transparent text-foreground ${!readOnly ? 'cursor-text' : 'cursor-default'}`} onClick={() => { if (!readOnly) editor.chain().focus().run(); }}>
         <EditorContent editor={editor} />
       </div>
     </div>

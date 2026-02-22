@@ -548,3 +548,29 @@
   --tw-prose-code: var(--foreground);
   color: var(--foreground);
 }
+
+/* Notes editor — compact Notion-style */
+.notes-editor .ProseMirror {
+  padding: 0;
+  min-height: 1.5em;
+  outline: none;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.notes-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  opacity: 0.4;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.notes-editor .ProseMirror>*:first-child {
+  margin-top: 0;
+}
+
+.notes-editor .ProseMirror>*:last-child {
+  margin-bottom: 0;
+}
