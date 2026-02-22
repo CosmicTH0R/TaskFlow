@@ -12,6 +12,7 @@ import { Label } from '../components/ui/label';
 import { Separator } from '../components/ui/separator';
 import { motion } from 'framer-motion';
 import { PageTransition, FadeIn } from '../components/PageTransition';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -81,6 +82,7 @@ export default function ProfilePage() {
             </motion.div>
             <h1 className="text-lg font-bold">Profile Settings</h1>
           </div>
+          <ThemeToggle />
         </motion.header>
 
         <main className="flex-1 flex items-center justify-center p-4 md:p-6 overflow-hidden">

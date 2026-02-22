@@ -9,8 +9,9 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
+import { ThemeToggle } from '../components/ThemeToggle';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageTransition, FadeIn } from '../components/PageTransition';
 
@@ -93,6 +94,7 @@ export default function DashboardPage() {
             <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout" id="logout-btn" className="text-muted-foreground hover:text-foreground btn-press">
               <LogOut className="w-4 h-4" />
             </Button>
+            <ThemeToggle />
           </div>
         </motion.header>
 

@@ -31,6 +31,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../components/ui/s
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageTransition, FadeIn } from '../components/PageTransition';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export default function BoardPage() {
   const { id } = useParams<{ id: string }>();
@@ -275,6 +276,7 @@ export default function BoardPage() {
             >
               <Keyboard className="w-4 h-4" />
             </Button>
+            <ThemeToggle />
           </div>
         </motion.header>
 
