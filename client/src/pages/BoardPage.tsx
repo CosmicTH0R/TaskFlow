@@ -29,6 +29,8 @@ import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PageTransition, FadeIn } from '../components/PageTransition';
 
 export default function BoardPage() {
   const { id } = useParams<{ id: string }>();
@@ -204,331 +206,377 @@ export default function BoardPage() {
   if (boardLoading || !currentBoard) {
     return (
       <div className="flex items-center justify-center h-screen w-full">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <motion.div
+          className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
-      <header
-        className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b border-white/5 relative z-10 shadow-sm"
-        style={{ borderTop: `4px solid ${currentBoard.color}` }}
-      >
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')} id="back-btn" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-bold leading-tight">{currentBoard.title}</h1>
-            {currentBoard.description && <p className="text-sm text-muted-foreground mt-0.5">{currentBoard.description}</p>}
+    <PageTransition>
+      <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
+        <motion.header
+          className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b border-white/5 relative z-10 shadow-sm"
+          style={{ borderTop: `4px solid ${currentBoard.color}` }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} id="back-btn" className="text-muted-foreground hover:text-foreground btn-press">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-xl font-bold leading-tight">{currentBoard.title}</h1>
+              {currentBoard.description && <p className="text-sm text-muted-foreground mt-0.5">{currentBoard.description}</p>}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center -space-x-2 mr-3 opacity-90 hover:opacity-100 transition-opacity cursor-pointer" onClick={() => { setShowMembers(!showMembers); setShowActivity(false); }}>
-            {currentBoard.members.slice(0, 4).map((m) => (
-              <Avatar key={m.id} className="w-8 h-8 border-2 border-card" title={m.user.name}>
-                <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
-                  {m.user.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {currentBoard.members.length > 4 && (
-               <Avatar className="w-8 h-8 border-2 border-card">
-                 <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
-                   +{currentBoard.members.length - 4}
-                 </AvatarFallback>
-               </Avatar>
-            )}
-          </div>
-          
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => { setShowActivity(!showActivity); setShowMembers(false); }}
-            id="activity-btn"
-            className={showActivity ? 'bg-primary/10 text-primary' : ''}
-          >
-            <ActivityIcon className="w-4 h-4 mr-2" /> Activity
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowShortcuts(true)}
-            title="Keyboard shortcuts (?)"
-            id="shortcuts-btn"
-          >
-            <Keyboard className="w-4 h-4" />
-          </Button>
-        </div>
-      </header>
-
-      {/* Filter bar */}
-      <div className="flex items-center gap-4 px-6 py-3 bg-muted/20 border-b border-white/5 relative z-10">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            className="pl-9 h-9 bg-card/50 border-white/5 focus-visible:ring-1 focus-visible:ring-primary/50"
-            placeholder="Filter tasks..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            id="board-filter-input"
-          />
-        </div>
-        
-        <Select value={filterPriority} onValueChange={setFilterPriority}>
-          <SelectTrigger className="w-[140px] h-9 bg-card/50 border-white/5" id="priority-filter">
-            <SelectValue placeholder="All priorities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All priorities</SelectItem>
-            <SelectItem value="LOW">Low</SelectItem>
-            <SelectItem value="MEDIUM">Medium</SelectItem>
-            <SelectItem value="HIGH">High</SelectItem>
-            <SelectItem value="URGENT">Urgent</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
-          <SelectTrigger className="w-[140px] h-9 bg-card/50 border-white/5" id="sort-select">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="position">Default order</SelectItem>
-            <SelectItem value="priority">Priority</SelectItem>
-            <SelectItem value="dueDate">Due date</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Sheet open={showMembers} onOpenChange={setShowMembers}>
-        <SheetContent side="right" className="w-[400px] border-l-border/50 bg-card p-0 flex flex-col">
-          <SheetHeader className="p-6 border-b border-border/50 flex-none">
-            <SheetTitle>Board Members</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-            <div className="space-y-4">
-              {currentBoard.members.map((m) => (
-                <div key={m.id} className="flex items-center gap-3">
-                  <Avatar className="w-10 h-10 border border-primary/20">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {m.user.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-foreground">{m.user.name}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{m.role.toLowerCase()}</span>
-                  </div>
-                </div>
+          <div className="flex items-center gap-2">
+            <motion.div
+              className="flex items-center -space-x-2 mr-3 opacity-90 hover:opacity-100 transition-opacity cursor-pointer"
+              onClick={() => { setShowMembers(!showMembers); setShowActivity(false); }}
+              whileHover={{ scale: 1.05 }}
+            >
+              {currentBoard.members.slice(0, 4).map((m) => (
+                <Avatar key={m.id} className="w-8 h-8 border-2 border-card" title={m.user.name}>
+                  <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                    {m.user.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               ))}
+              {currentBoard.members.length > 4 && (
+                 <Avatar className="w-8 h-8 border-2 border-card">
+                   <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
+                     +{currentBoard.members.length - 4}
+                   </AvatarFallback>
+                 </Avatar>
+              )}
+            </motion.div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setShowActivity(!showActivity); setShowMembers(false); }}
+              id="activity-btn"
+              className={`btn-press ${showActivity ? 'bg-primary/10 text-primary' : ''}`}
+            >
+              <ActivityIcon className="w-4 h-4 mr-2" /> Activity
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowShortcuts(true)}
+              title="Keyboard shortcuts (?)"
+              id="shortcuts-btn"
+              className="btn-press"
+            >
+              <Keyboard className="w-4 h-4" />
+            </Button>
+          </div>
+        </motion.header>
+
+        {/* Filter bar */}
+        <FadeIn delay={0.15} direction="down">
+          <div className="flex items-center gap-4 px-6 py-3 bg-muted/20 border-b border-white/5 relative z-10">
+            <div className="relative flex-1 max-w-sm input-focus-glow rounded-md transition-shadow duration-300">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                className="pl-9 h-9 bg-card/50 border-white/5 focus-visible:ring-1 focus-visible:ring-primary/50 transition-all duration-300"
+                placeholder="Filter tasks..."
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                id="board-filter-input"
+              />
             </div>
             
-            <div className="pt-6 border-t border-border/50">
-              <h4 className="text-sm font-medium mb-3">Add Member</h4>
-              <form onSubmit={handleAddMember} className="flex flex-col gap-3">
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    placeholder="Email address..."
-                    value={newMemberEmail}
-                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                    id="add-member-input"
-                    className="flex-1 bg-white/5"
-                  />
-                  <Button type="submit" id="add-member-btn" disabled={!newMemberEmail.trim()}>
-                    <UserPlus className="w-4 h-4" />
-                  </Button>
-                </div>
-                {memberError && <p className="text-sm text-destructive">{memberError}</p>}
-              </form>
-            </div>
+            <Select value={filterPriority} onValueChange={setFilterPriority}>
+              <SelectTrigger className="w-[140px] h-9 bg-card/50 border-white/5" id="priority-filter">
+                <SelectValue placeholder="All priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All priorities</SelectItem>
+                <SelectItem value="LOW">Low</SelectItem>
+                <SelectItem value="MEDIUM">Medium</SelectItem>
+                <SelectItem value="HIGH">High</SelectItem>
+                <SelectItem value="URGENT">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+              <SelectTrigger className="w-[140px] h-9 bg-card/50 border-white/5" id="sort-select">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="position">Default order</SelectItem>
+                <SelectItem value="priority">Priority</SelectItem>
+                <SelectItem value="dueDate">Due date</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </SheetContent>
-      </Sheet>
+        </FadeIn>
 
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-6 custom-scrollbar relative">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex gap-4 sm:gap-6 h-full items-start">
-            {lists.map((list) => (
-              <div 
-                key={list.id} 
-                className="w-[280px] sm:w-[320px] shrink-0 bg-secondary/30 backdrop-blur-md border border-white/5 rounded-xl flex flex-col max-h-full transition-colors hover:bg-secondary/40" 
-                id={`list-${list.id}`}
-              >
-                <div className="p-3 sm:p-4 flex items-center justify-between group flex-none">
-                  {editingListId === list.id ? (
-                    <Input
-                      value={editListTitle}
-                      onChange={(e) => setEditListTitle(e.target.value)}
-                      onBlur={() => handleUpdateList(list.id)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateList(list.id)}
-                      autoFocus
-                      className="h-8 py-1 px-2 text-sm font-semibold bg-background"
-                    />
-                  ) : (
-                    <h3
-                      className="text-sm font-semibold flex items-center gap-2 cursor-pointer hover:text-primary transition-colors flex-1"
-                      onClick={() => { setEditingListId(list.id); setEditListTitle(list.title); }}
-                    >
-                      {list.title}
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-normal">
-                        {list.tasks.length}
-                      </span>
-                    </h3>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                    onClick={() => setConfirmDeleteList(list.id)}
-                    title="Delete list"
+        <Sheet open={showMembers} onOpenChange={setShowMembers}>
+          <SheetContent side="right" className="w-[400px] border-l-border/50 bg-card p-0 flex flex-col">
+            <SheetHeader className="p-6 border-b border-border/50 flex-none">
+              <SheetTitle>Board Members</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+              <div className="space-y-4">
+                {currentBoard.members.map((m, index) => (
+                  <motion.div
+                    key={m.id}
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-
-                <SortableContext items={list.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                  <div className="flex-1 overflow-y-auto px-3 sm:px-4 pb-2 relative min-h-[50px] custom-scrollbar" id={list.id}>
-                    {list.tasks
-                      .filter(task => {
-                        if (filterText && !task.title.toLowerCase().includes(filterText.toLowerCase()) &&
-                            !(task.description || '').toLowerCase().includes(filterText.toLowerCase())) return false;
-                        if (filterPriority && filterPriority !== 'all' && task.priority !== filterPriority) return false;
-                        return true;
-                      })
-                      .sort((a, b) => {
-                        if (sortBy === 'priority') {
-                          const order = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
-                          return (order[a.priority as keyof typeof order] ?? 2) - (order[b.priority as keyof typeof order] ?? 2);
-                        }
-                        if (sortBy === 'dueDate') {
-                          if (!a.dueDate && !b.dueDate) return 0;
-                          if (!a.dueDate) return 1;
-                          if (!b.dueDate) return -1;
-                          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-                        }
-                        return a.position - b.position;
-                      })
-                      .map((task) => (
-                      <SortableTaskCard
-                        key={task.id}
-                        task={task}
-                        onClick={() => setSelectedTask(task)}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-
-                <div className="p-3 pt-1 flex-none border-t border-transparent">
-                  {addingTaskListId === list.id ? (
-                    <form onSubmit={(e) => handleCreateTask(e, list.id)} className="space-y-2">
-                      <Input
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder="Task title..."
-                        autoFocus
-                        id="new-task-input"
-                        className="h-9 bg-background/50 border-white/10"
-                        onBlur={() => { if (!newTaskTitle.trim()) setAddingTaskListId(null); }}
-                      />
-                      <div className="flex items-center gap-2">
-                        <Button type="submit" size="sm" className="h-8">Add</Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="w-8 h-8 text-muted-foreground"
-                          onClick={() => setAddingTaskListId(null)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </form>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-white/5 h-9 px-2"
-                      onClick={() => { setAddingTaskListId(list.id); setNewTaskTitle(''); }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" /> Add task
-                    </Button>
-                  )}
-                </div>
+                    <Avatar className="w-10 h-10 border border-primary/20">
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {m.user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-foreground">{m.user.name}</span>
+                      <span className="text-xs text-muted-foreground capitalize">{m.role.toLowerCase()}</span>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-            ))}
-
-            {addingList ? (
-              <div className="w-[280px] sm:w-[320px] shrink-0 bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-3">
-                <form onSubmit={handleCreateList} className="space-y-2">
-                  <Input
-                    value={newListTitle}
-                    onChange={(e) => setNewListTitle(e.target.value)}
-                    placeholder="List title..."
-                    autoFocus
-                    className="bg-background/50"
-                    onBlur={() => { if (!newListTitle.trim()) setAddingList(false); }}
-                  />
-                  <div className="flex items-center gap-2">
-                    <Button type="submit" size="sm" className="h-8">Add List</Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 text-muted-foreground"
-                      onClick={() => setAddingList(false)}
-                    >
-                      <X className="w-4 h-4" />
+              
+              <div className="pt-6 border-t border-border/50">
+                <h4 className="text-sm font-medium mb-3">Add Member</h4>
+                <form onSubmit={handleAddMember} className="flex flex-col gap-3">
+                  <div className="flex gap-2">
+                    <Input
+                      type="email"
+                      placeholder="Email address..."
+                      value={newMemberEmail}
+                      onChange={(e) => setNewMemberEmail(e.target.value)}
+                      id="add-member-input"
+                      className="flex-1 bg-white/5"
+                    />
+                    <Button type="submit" id="add-member-btn" disabled={!newMemberEmail.trim()} className="btn-press">
+                      <UserPlus className="w-4 h-4" />
                     </Button>
                   </div>
+                  {memberError && <p className="text-sm text-destructive">{memberError}</p>}
                 </form>
               </div>
-            ) : (
-              <Button
-                variant="ghost"
-                className="w-[280px] sm:w-[320px] shrink-0 h-12 justify-start text-muted-foreground/80 hover:text-foreground hover:bg-white/5 border border-dashed border-white/10"
-                onClick={() => { setAddingList(true); setNewListTitle(''); }}
-                id="add-list-btn"
-              >
-                <Plus className="w-5 h-5 mr-2" /> Add List
-              </Button>
-            )}
-          </div>
+            </div>
+          </SheetContent>
+        </Sheet>
 
-          <DragOverlay>
-            {activeTask ? <TaskCard task={activeTask} isDragging /> : null}
-          </DragOverlay>
-        </DndContext>
+        <div className="flex-1 overflow-x-auto overflow-y-hidden p-6 custom-scrollbar relative">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="flex gap-4 sm:gap-6 h-full items-start">
+              {lists.map((list, listIndex) => (
+                <motion.div
+                  key={list.id}
+                  className="w-[280px] sm:w-[320px] shrink-0 bg-secondary/30 backdrop-blur-md border border-white/5 rounded-xl flex flex-col max-h-full transition-colors hover:bg-secondary/40"
+                  id={`list-${list.id}`}
+                  initial={{ opacity: 0, x: -25 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.4,
+                    delay: listIndex * 0.08,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  <div className="p-3 sm:p-4 flex items-center justify-between group flex-none">
+                    {editingListId === list.id ? (
+                      <Input
+                        value={editListTitle}
+                        onChange={(e) => setEditListTitle(e.target.value)}
+                        onBlur={() => handleUpdateList(list.id)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleUpdateList(list.id)}
+                        autoFocus
+                        className="h-8 py-1 px-2 text-sm font-semibold bg-background"
+                      />
+                    ) : (
+                      <h3
+                        className="text-sm font-semibold flex items-center gap-2 cursor-pointer hover:text-primary transition-colors flex-1"
+                        onClick={() => { setEditingListId(list.id); setEditListTitle(list.title); }}
+                      >
+                        {list.title}
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-normal">
+                          {list.tasks.length}
+                        </span>
+                      </h3>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive btn-press"
+                      onClick={() => setConfirmDeleteList(list.id)}
+                      title="Delete list"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+
+                  <SortableContext items={list.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                    <div className="flex-1 overflow-y-auto px-3 sm:px-4 pb-2 relative min-h-[50px] custom-scrollbar" id={list.id}>
+                      {list.tasks
+                        .filter(task => {
+                          if (filterText && !task.title.toLowerCase().includes(filterText.toLowerCase()) &&
+                              !(task.description || '').toLowerCase().includes(filterText.toLowerCase())) return false;
+                          if (filterPriority && filterPriority !== 'all' && task.priority !== filterPriority) return false;
+                          return true;
+                        })
+                        .sort((a, b) => {
+                          if (sortBy === 'priority') {
+                            const order = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+                            return (order[a.priority as keyof typeof order] ?? 2) - (order[b.priority as keyof typeof order] ?? 2);
+                          }
+                          if (sortBy === 'dueDate') {
+                            if (!a.dueDate && !b.dueDate) return 0;
+                            if (!a.dueDate) return 1;
+                            if (!b.dueDate) return -1;
+                            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                          }
+                          return a.position - b.position;
+                        })
+                        .map((task) => (
+                        <SortableTaskCard
+                          key={task.id}
+                          task={task}
+                          onClick={() => setSelectedTask(task)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+
+                  <div className="p-3 pt-1 flex-none border-t border-transparent">
+                    {addingTaskListId === list.id ? (
+                      <form onSubmit={(e) => handleCreateTask(e, list.id)} className="space-y-2">
+                        <Input
+                          value={newTaskTitle}
+                          onChange={(e) => setNewTaskTitle(e.target.value)}
+                          placeholder="Task title..."
+                          autoFocus
+                          id="new-task-input"
+                          className="h-9 bg-background/50 border-white/10"
+                          onBlur={() => { if (!newTaskTitle.trim()) setAddingTaskListId(null); }}
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button type="submit" size="sm" className="h-8 btn-press">Add</Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8 text-muted-foreground"
+                            onClick={() => setAddingTaskListId(null)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </form>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-white/5 h-9 px-2 btn-press"
+                        onClick={() => { setAddingTaskListId(list.id); setNewTaskTitle(''); }}
+                      >
+                        <Plus className="w-4 h-4 mr-2" /> Add task
+                      </Button>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+
+              {addingList ? (
+                <motion.div
+                  className="w-[280px] sm:w-[320px] shrink-0 bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-3"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <form onSubmit={handleCreateList} className="space-y-2">
+                    <Input
+                      value={newListTitle}
+                      onChange={(e) => setNewListTitle(e.target.value)}
+                      placeholder="List title..."
+                      autoFocus
+                      className="bg-background/50"
+                      onBlur={() => { if (!newListTitle.trim()) setAddingList(false); }}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button type="submit" size="sm" className="h-8 btn-press">Add List</Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 text-muted-foreground"
+                        onClick={() => setAddingList(false)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </form>
+                </motion.div>
+              ) : (
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    variant="ghost"
+                    className="w-[280px] sm:w-[320px] shrink-0 h-12 justify-start text-muted-foreground/80 hover:text-foreground hover:bg-white/5 border border-dashed border-white/10 hover:border-primary/30 transition-all duration-300"
+                    onClick={() => { setAddingList(true); setNewListTitle(''); }}
+                    id="add-list-btn"
+                  >
+                    <Plus className="w-5 h-5 mr-2" /> Add List
+                  </Button>
+                </motion.div>
+              )}
+            </div>
+
+            <DragOverlay>
+              {activeTask ? (
+                <motion.div
+                  initial={{ scale: 1, rotate: 0 }}
+                  animate={{ scale: 1.05, rotate: 2, boxShadow: '0 20px 60px -10px rgba(99, 102, 241, 0.4)' }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TaskCard task={activeTask} isDragging />
+                </motion.div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </div>
+
+        {showActivity && currentBoard && (
+          <ActivitySidebar boardId={currentBoard.id} onClose={() => setShowActivity(false)} />
+        )}
+
+        {selectedTask && (
+          <TaskModal
+            task={selectedTask}
+            boardMembers={currentBoard.members}
+            onClose={() => setSelectedTask(null)}
+          />
+        )}
+
+        {confirmDeleteList && (
+          <ConfirmModal
+            title="Delete List"
+            message="Are you sure you want to delete this list and all its tasks? This action cannot be undone."
+            confirmLabel="Delete List"
+            onConfirm={handleDeleteList}
+            onCancel={() => setConfirmDeleteList(null)}
+          />
+        )}
+
+        {showShortcuts && <ShortcutsHelp onClose={() => setShowShortcuts(false)} />}
       </div>
-
-      {showActivity && currentBoard && (
-        <ActivitySidebar boardId={currentBoard.id} onClose={() => setShowActivity(false)} />
-      )}
-
-      {selectedTask && (
-        <TaskModal
-          task={selectedTask}
-          boardMembers={currentBoard.members}
-          onClose={() => setSelectedTask(null)}
-        />
-      )}
-
-      {confirmDeleteList && (
-        <ConfirmModal
-          title="Delete List"
-          message="Are you sure you want to delete this list and all its tasks? This action cannot be undone."
-          confirmLabel="Delete List"
-          onConfirm={handleDeleteList}
-          onCancel={() => setConfirmDeleteList(null)}
-        />
-      )}
-
-      {showShortcuts && <ShortcutsHelp onClose={() => setShowShortcuts(false)} />}
-    </div>
+    </PageTransition>
   );
 }

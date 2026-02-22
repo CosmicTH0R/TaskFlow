@@ -3,6 +3,7 @@ import { useBoardStore } from '../store/boardStore';
 import { ArrowRight, Plus, Trash2, UserPlus, Edit3, MoveRight, UserMinus } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from './ui/sheet';
 import { Button } from './ui/button';
+import { motion } from 'framer-motion';
 
 const ACTION_ICONS: Record<string, any> = {
   BOARD_CREATED: Plus,
@@ -68,15 +69,30 @@ export default function ActivitySidebar({ boardId, onClose }: ActivitySidebarPro
         <SheetHeader className="p-6 border-b border-border/50 flex-none">
           <SheetTitle className="text-xl">Activity</SheetTitle>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 relative">
-          {activities.map((activity) => {
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 relative timeline-line">
+          {activities.map((activity, index) => {
             const Icon = ACTION_ICONS[activity.action] || Edit3;
             const details = getDetails(activity.details);
             return (
-              <div key={activity.id} className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 relative z-10">
+              <motion.div
+                key={activity.id}
+                className="flex gap-4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  duration: 0.35,
+                  delay: index * 0.05,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
+                <motion.div
+                  className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 relative z-10"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20, delay: index * 0.05 + 0.1 }}
+                >
                   <Icon size={14} />
-                </div>
+                </motion.div>
                 <div className="flex-1 pb-4 border-b border-border/30 last:border-0 last:pb-0">
                   <p className="text-sm text-foreground/90 leading-relaxed">
                     <strong className="text-foreground">{activity.user.name}</strong>{' '}
@@ -84,8 +100,8 @@ export default function ActivitySidebar({ boardId, onClose }: ActivitySidebarPro
                     {details.title && <span className="text-foreground"> "<em>{details.title}</em>"</span>}
                     {details.fromList && details.toList && (
                       <span className="inline-flex items-center gap-1 text-muted-foreground ml-1">
-                        from <span className="text-foreground font-medium">{details.fromList}</span> 
-                        <ArrowRight size={12} /> 
+                        from <span className="text-foreground font-medium">{details.fromList}</span>
+                        <ArrowRight size={12} />
                         <span className="text-foreground font-medium">{details.toList}</span>
                       </span>
                     )}
@@ -94,23 +110,33 @@ export default function ActivitySidebar({ boardId, onClose }: ActivitySidebarPro
                   </p>
                   <span className="text-xs text-muted-foreground mt-1 block">{formatTime(activity.createdAt)}</span>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-          
+
           {activities.length === 0 && (
-            <div className="text-center text-muted-foreground py-10">No activity yet</div>
+            <motion.div
+              className="text-center text-muted-foreground py-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              No activity yet
+            </motion.div>
           )}
-          
+
           {activityPagination && activityPagination.page < activityPagination.totalPages && (
             <div className="pt-4 pb-8 flex justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fetchActivity(boardId, activityPagination.page + 1)}
-              >
-                Load more
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchActivity(boardId, activityPagination.page + 1)}
+                  className="btn-press"
+                >
+                  Load more
+                </Button>
+              </motion.div>
             </div>
           )}
         </div>
